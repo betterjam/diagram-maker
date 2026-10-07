@@ -1,0 +1,882 @@
+{
+  "title": "Store to Central - Edge on premise",
+  "categories": [
+    {
+      "id": "traffic",
+      "label": "Traffic / Users",
+      "icon": "👥",
+      "color": "#eab308"
+    },
+    {
+      "id": "dns",
+      "label": "DNS",
+      "icon": "🌐",
+      "color": "#a78bfa"
+    },
+    {
+      "id": "edge",
+      "label": "Edge / CDN",
+      "icon": "☁️",
+      "color": "#38bdf8"
+    },
+    {
+      "id": "net",
+      "label": "Networking",
+      "icon": "🕸️",
+      "color": "#2dd4bf"
+    },
+    {
+      "id": "compute",
+      "label": "Services",
+      "icon": "⚙️",
+      "color": "#34d399"
+    },
+    {
+      "id": "database",
+      "label": "Database",
+      "icon": "🗄️",
+      "color": "#fb7185"
+    },
+    {
+      "id": "storage",
+      "label": "Storage",
+      "icon": "📦",
+      "color": "#f472b6"
+    },
+    {
+      "id": "security",
+      "label": "Security",
+      "icon": "🔒",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "repo",
+      "label": "Repositories",
+      "icon": "📚",
+      "color": "#a3e635"
+    },
+    {
+      "id": "pipeline",
+      "label": "Pipelines",
+      "icon": "🚀",
+      "color": "#c084fc"
+    },
+    {
+      "id": "misc",
+      "label": "Other",
+      "icon": "🧩",
+      "color": "#818cf8"
+    },
+    {
+      "id": "ops",
+      "label": "Ops",
+      "icon": "⏰",
+      "color": "#94a3b8"
+    },
+    {
+      "id": "pos",
+      "label": "Point of sale",
+      "icon": "💳",
+      "color": "#fb923c"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_ekisbk1",
+      "label": "Merchant Local",
+      "icon": "🏪"
+    },
+    {
+      "id": "sn_nn07hs2",
+      "label": "Local Subnet",
+      "kind": "network",
+      "categoryId": "net",
+      "cidr": "192.168.1.0/24",
+      "parentId": "g_ekisbk1",
+      "icon": "🕸️"
+    },
+    {
+      "id": "g_central",
+      "label": "Central - AWS",
+      "kind": "container",
+      "categoryId": "edge",
+      "icon": "☁️"
+    },
+    {
+      "id": "sn_central",
+      "label": "Private subnet",
+      "kind": "network",
+      "categoryId": "net",
+      "cidr": "10.20.0.0/16",
+      "parentId": "g_central"
+    },
+    {
+      "id": "g_concerns",
+      "label": "Store network - what to open, and what to watch",
+      "kind": "container",
+      "categoryId": "security",
+      "icon": "🧭"
+    },
+    {
+      "id": "g_egress",
+      "label": "Open outbound at the store firewall",
+      "kind": "container",
+      "categoryId": "net",
+      "parentId": "g_concerns"
+    },
+    {
+      "id": "g_lan",
+      "label": "Must work inside the store LAN",
+      "kind": "container",
+      "categoryId": "net",
+      "parentId": "g_concerns"
+    },
+    {
+      "id": "g_risk",
+      "label": "Close these before rollout",
+      "kind": "container",
+      "categoryId": "security",
+      "parentId": "g_concerns"
+    },
+    {
+      "id": "g_xt_local",
+      "label": "Exatouch",
+      "kind": "container",
+      "categoryId": "pos",
+      "icon": "🖥️",
+      "parentId": "sn_nn07hs2"
+    },
+    {
+      "id": "g_edge_local",
+      "label": "Edge API",
+      "kind": "container",
+      "categoryId": "compute",
+      "icon": "⚙️",
+      "parentId": "sn_nn07hs2"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n_hsxahcf",
+      "label": "Exatouch",
+      "categoryId": "pos",
+      "x": -335,
+      "y": 200,
+      "groupId": "g_xt_local",
+      "icon": "🖥️",
+      "width": 97,
+      "height": 46,
+      "subnetId": "sn_nn07hs2",
+      "ip": "192.168.1.10",
+      "sublabel": "Windows POS",
+      "props": {
+        "talks to": "XTTDB on this host or a back-office PC"
+      }
+    },
+    {
+      "id": "n_dj7z1cp",
+      "label": "XTTDB",
+      "categoryId": "database",
+      "x": -338,
+      "y": 353,
+      "groupId": "g_xt_local",
+      "width": 103,
+      "height": 50,
+      "icon": "🪟",
+      "subnetId": "sn_nn07hs2",
+      "ip": "192.168.1.10",
+      "sublabel": "SQL Server",
+      "props": {
+        "engine": "TCP 1433",
+        "browser": "UDP 1434 (named instance)",
+        "auth": "SQL login, held by the Edge"
+      }
+    },
+    {
+      "id": "n_f64b9l5",
+      "label": "Edge DPOS",
+      "categoryId": "compute",
+      "x": -108,
+      "y": 354,
+      "groupId": "g_edge_local",
+      "width": 104,
+      "height": 51,
+      "subnetId": "sn_nn07hs2",
+      "ip": "192.168.1.50",
+      "sublabel": "Edge API + workers",
+      "props": {
+        "serves": "TCP 5200 to every device on the LAN",
+        "discovery": "mDNS UDP 5353",
+        "addressing": "static or DHCP reservation - devices cache it",
+        "opens outbound": "443 to Central, and nothing else"
+      }
+    },
+    {
+      "id": "n_m4dfkju",
+      "label": "Optional Devices",
+      "categoryId": "pos",
+      "x": -114,
+      "y": 254,
+      "width": 125,
+      "height": 31,
+      "icon": "💳",
+      "groupId": "g_ekisbk1",
+      "subnetId": "sn_nn07hs2",
+      "ip": "192.168.1.60-99",
+      "sublabel": "Tablets, kiosks, handhelds",
+      "props": {
+        "reaches the Edge": "TCP 5200",
+        "finds the Edge": "mDNS, or a host typed in by hand"
+      }
+    },
+    {
+      "id": "n_5o791ql",
+      "label": "Local DPOS DB",
+      "categoryId": "database",
+      "x": -120,
+      "y": 455,
+      "groupId": "g_edge_local",
+      "icon": "🪶",
+      "width": 131,
+      "height": 46,
+      "subnetId": "sn_nn07hs2",
+      "sublabel": "SQLite, on the Edge box",
+      "props": {
+        "holds": "orders, catalog, outbox, export jobs",
+        "why it matters": "this is what keeps the store selling offline"
+      }
+    },
+    {
+      "id": "n_fw",
+      "label": "Store router / firewall",
+      "sublabel": "NAT gateway",
+      "categoryId": "net",
+      "icon": "🧱",
+      "groupId": "g_ekisbk1",
+      "x": 60,
+      "y": 40,
+      "width": 170,
+      "height": 46,
+      "ip": "192.168.1.1",
+      "props": {
+        "outbound": "443, 53, 123",
+        "inbound": "none",
+        "nat": "many-to-one, public IP may move or be carrier-grade"
+      }
+    },
+    {
+      "id": "n_printers",
+      "label": "Printers",
+      "sublabel": "Receipt + kitchen",
+      "categoryId": "pos",
+      "icon": "🖨️",
+      "groupId": "g_ekisbk1",
+      "subnetId": "sn_nn07hs2",
+      "x": 60,
+      "y": 250,
+      "width": 150,
+      "height": 46,
+      "ip": "192.168.1.20-29",
+      "props": {
+        "raw print": "TCP 9100",
+        "addressing": "static - a new lease stops printing"
+      }
+    },
+    {
+      "id": "n_customers",
+      "label": "Online customers + staff",
+      "sublabel": "Browser",
+      "categoryId": "traffic",
+      "icon": "👥",
+      "x": 310,
+      "y": 60,
+      "width": 170,
+      "height": 46
+    },
+    {
+      "id": "n_internet",
+      "label": "Public internet",
+      "sublabel": "Store ISP link",
+      "categoryId": "net",
+      "icon": "🌍",
+      "x": 310,
+      "y": 230,
+      "width": 170,
+      "height": 46,
+      "props": {
+        "who opens the connection": "always the store, never Central"
+      }
+    },
+    {
+      "id": "c_cdn",
+      "label": "CloudFront + S3",
+      "sublabel": "Central dashboard, online POS",
+      "categoryId": "edge",
+      "icon": "🌎",
+      "groupId": "g_central",
+      "x": 600,
+      "y": 60,
+      "width": 200,
+      "height": 46
+    },
+    {
+      "id": "c_alb",
+      "label": "Public HTTPS endpoint",
+      "sublabel": "ALB - TLS 443",
+      "categoryId": "net",
+      "icon": "⚖️",
+      "groupId": "g_central",
+      "x": 600,
+      "y": 160,
+      "width": 200,
+      "height": 46,
+      "props": {
+        "listener": "443 only",
+        "certificate": "public CA, renewed by ACM"
+      }
+    },
+    {
+      "id": "c_stream",
+      "label": "Store stream",
+      "sublabel": "one open connection per store",
+      "categoryId": "compute",
+      "icon": "📡",
+      "groupId": "g_central",
+      "subnetId": "sn_central",
+      "x": 860,
+      "y": 380,
+      "width": 200,
+      "height": 46,
+      "props": {
+        "transport": "server-sent events over the same 443 listener",
+        "auth": "the device key the store already has",
+        "resume": "the store sends the last id it processed",
+        "keepalive": "so NAT and proxies do not drop an idle connection"
+      }
+    },
+    {
+      "id": "c_outbox",
+      "label": "Per-store queue",
+      "sublabel": "what a store missed",
+      "categoryId": "storage",
+      "icon": "📥",
+      "groupId": "g_central",
+      "subnetId": "sn_central",
+      "x": 1110,
+      "y": 380,
+      "width": 200,
+      "height": 46,
+      "props": {
+        "holds": "events for a store that is not connected",
+        "kept for": "at least the longest outage we promise",
+        "replaces": "topic retention, which stores no longer depend on"
+      }
+    },
+    {
+      "id": "c_api",
+      "label": "Central API",
+      "sublabel": "Orders, catalog, tenants",
+      "categoryId": "compute",
+      "groupId": "g_central",
+      "subnetId": "sn_central",
+      "x": 860,
+      "y": 60,
+      "width": 200,
+      "height": 46,
+      "props": {
+        "auth accepted": "X-Device-ApiKey, edge key, JWT",
+        "the Edge calls it for": "catalog sync, product push, order catch-up"
+      }
+    },
+    {
+      "id": "c_saga",
+      "label": "Order saga",
+      "sublabel": "validate - status - notify - webhooks",
+      "categoryId": "compute",
+      "icon": "🧾",
+      "groupId": "g_central",
+      "subnetId": "sn_central",
+      "x": 860,
+      "y": 150,
+      "width": 200,
+      "height": 46
+    },
+    {
+      "id": "c_hooks",
+      "label": "Webhooks + notifier",
+      "sublabel": "Out to merchant systems",
+      "categoryId": "compute",
+      "icon": "📤",
+      "groupId": "g_central",
+      "subnetId": "sn_central",
+      "x": 860,
+      "y": 240,
+      "width": 200,
+      "height": 46
+    },
+    {
+      "id": "c_kafka",
+      "label": "Kafka",
+      "sublabel": "pos.orders, pos.products, pos.auth",
+      "categoryId": "pipeline",
+      "icon": "📣",
+      "groupId": "g_central",
+      "subnetId": "sn_central",
+      "x": 1110,
+      "y": 60,
+      "width": 200,
+      "height": 46,
+      "props": {
+        "retention": "must cover the offline window we promise",
+        "isolation": "internal only - a store subscribes through Central, never to the broker"
+      }
+    },
+    {
+      "id": "c_db",
+      "label": "Central database",
+      "sublabel": "Postgres",
+      "categoryId": "database",
+      "shape": "cylinder",
+      "groupId": "g_central",
+      "subnetId": "sn_central",
+      "x": 1110,
+      "y": 150,
+      "width": 200,
+      "height": 76
+    },
+    {
+      "id": "c_secrets",
+      "label": "Device keys + secrets",
+      "sublabel": "Issue, rotate, revoke",
+      "categoryId": "security",
+      "icon": "🔑",
+      "groupId": "g_central",
+      "subnetId": "sn_central",
+      "x": 1110,
+      "y": 260,
+      "width": 200,
+      "height": 46
+    },
+    {
+      "id": "w_443",
+      "label": "Outbound TCP 443",
+      "sublabel": "To the Central hostnames",
+      "categoryId": "net",
+      "icon": "🔐",
+      "groupId": "g_egress",
+      "x": -330,
+      "y": 730,
+      "width": 300,
+      "height": 56,
+      "info": "Carries: REST sync, auth, catalog, order catch-up\nDirection: opened by the Edge, never by Central\nProxy: allow-list the hostname, not an IP - the IP moves"
+    },
+    {
+      "id": "w_9094",
+      "label": "A connection held open for hours",
+      "sublabel": "the price of pushing over 443",
+      "categoryId": "net",
+      "icon": "📡",
+      "groupId": "g_egress",
+      "x": -330,
+      "y": 802,
+      "width": 300,
+      "height": 56,
+      "info": "A subscription is one HTTP request that never finishes.\nNAT tables and proxies drop idle connections, so the stream sends a\nkeepalive, and the Edge reconnects with backoff from its last id"
+    },
+    {
+      "id": "w_noin",
+      "label": "No inbound, no VPN",
+      "sublabel": "Nothing is forwarded at the store",
+      "categoryId": "net",
+      "icon": "🚫",
+      "groupId": "g_egress",
+      "x": -330,
+      "y": 874,
+      "width": 300,
+      "height": 56,
+      "info": "Central never dials the store.\nREST is Edge-initiated and Kafka is a consumer connection, so both go outward.\nSo: no port forwards, no static public IP, no site-to-site tunnel"
+    },
+    {
+      "id": "w_dnsntp",
+      "label": "DNS and NTP",
+      "sublabel": "UDP/TCP 53 and UDP 123",
+      "categoryId": "net",
+      "icon": "🕑",
+      "groupId": "g_egress",
+      "x": -330,
+      "y": 946,
+      "width": 300,
+      "height": 56,
+      "info": "A captive resolver or split-horizon DNS will break hostname resolution.\nClock skew breaks TLS, token expiry, SASL and order timestamps.\nKeep the box within about a minute of real time"
+    },
+    {
+      "id": "l_5200",
+      "label": "Edge API on the LAN",
+      "sublabel": "TCP 5200 from every device",
+      "categoryId": "net",
+      "icon": "🔌",
+      "groupId": "g_lan",
+      "x": 60,
+      "y": 730,
+      "width": 300,
+      "height": 56,
+      "info": "Devices, kiosks and the local dashboard all call the Edge on this port.\nGive the box a DHCP reservation or a static address - devices cache the host"
+    },
+    {
+      "id": "l_mdns",
+      "label": "Device discovery",
+      "sublabel": "mDNS - UDP 5353",
+      "categoryId": "net",
+      "icon": "📡",
+      "groupId": "g_lan",
+      "x": 60,
+      "y": 802,
+      "width": 300,
+      "height": 56,
+      "info": "Multicast does not cross VLANs, and guest Wi-Fi client isolation drops it.\nPut devices and the Edge on one VLAN, or configure the host by hand"
+    },
+    {
+      "id": "l_sql",
+      "label": "Exatouch SQL Server",
+      "sublabel": "TCP 1433 and UDP 1434",
+      "categoryId": "net",
+      "icon": "🪟",
+      "groupId": "g_lan",
+      "x": 60,
+      "y": 874,
+      "width": 300,
+      "height": 56,
+      "info": "The Edge writes orders straight into XTTDB, so it needs a route to that host.\n1434 is the SQL Browser - a named instance cannot be found without it.\nWindows Firewall must allow both, and TCP/IP must be on in SQL Configuration Manager"
+    },
+    {
+      "id": "l_9100",
+      "label": "Printers",
+      "sublabel": "TCP 9100, raw",
+      "categoryId": "net",
+      "icon": "🖨️",
+      "groupId": "g_lan",
+      "x": 60,
+      "y": 946,
+      "width": 300,
+      "height": 56,
+      "info": "Receipt and kitchen printers are addressed directly by IP.\nSame VLAN as the Edge, and fixed addresses - a lease change stops printing silently"
+    },
+    {
+      "id": "r_plain",
+      "label": "Kafka never leaves Central",
+      "sublabel": "no store connects to the broker",
+      "categoryId": "security",
+      "icon": "🔒",
+      "groupId": "g_risk",
+      "x": 450,
+      "y": 730,
+      "width": 300,
+      "height": 56,
+      "info": "Keeping the store's leg on 443 takes the broker off the public internet.\nIt still wants TLS between Central's own services.\nWhat it no longer needs is a broker credential on every shop-floor PC"
+    },
+    {
+      "id": "r_tenant",
+      "label": "Fan-out and replay are ours now",
+      "sublabel": "Central owns what the broker used to",
+      "categoryId": "security",
+      "icon": "👥",
+      "groupId": "g_risk",
+      "x": 450,
+      "y": 802,
+      "width": 300,
+      "height": 56,
+      "info": "Isolation stops being an ACL and becomes a query: one queue per store.\nThat is the right place for it, but it is code we own.\nNeeds backpressure, and a jittered reconnect so a restart is not a stampede"
+    },
+    {
+      "id": "r_tls",
+      "label": "TLS interception",
+      "sublabel": "UTM boxes and corporate proxies re-sign",
+      "categoryId": "security",
+      "icon": "🛡️",
+      "groupId": "g_risk",
+      "x": 450,
+      "y": 874,
+      "width": 300,
+      "height": 56,
+      "info": "A middlebox that re-signs traffic breaks the chain unless the Edge trusts its root CA.\nSo: never pin certificates, and prefer an exemption for the Central hosts"
+    },
+    {
+      "id": "r_creds",
+      "label": "Credential rotation",
+      "sublabel": "Device keys sit on a shop-floor PC",
+      "categoryId": "security",
+      "icon": "🔑",
+      "groupId": "g_risk",
+      "x": 450,
+      "y": 946,
+      "width": 300,
+      "height": 56,
+      "info": "The device key lives on an unattended machine that strangers can walk up to.\nNeeded: rotate and revoke from Central with no site visit, and short-lived tokens"
+    },
+    {
+      "id": "r_retention",
+      "label": "How far back a store can catch up",
+      "sublabel": "a Central decision now",
+      "categoryId": "ops",
+      "icon": "🗓️",
+      "groupId": "g_risk",
+      "x": 830,
+      "y": 730,
+      "width": 300,
+      "height": 56,
+      "info": "Retention is no longer a topic setting, it is how long the per-store queue\nis kept. It has to cover the longest outage we promise, and the order\nbackfill endpoint is the floor under it"
+    },
+    {
+      "id": "r_ops",
+      "label": "Updates and health, pull only",
+      "sublabel": "You cannot dial in",
+      "categoryId": "ops",
+      "icon": "📈",
+      "groupId": "g_risk",
+      "x": 830,
+      "y": 802,
+      "width": 300,
+      "height": 56,
+      "info": "With no inbound path the Edge fetches its own updates and pushes its own heartbeat.\nWithout that, a store that stopped syncing is invisible until someone phones"
+    },
+    {
+      "id": "r_cgnat",
+      "label": "CGNAT and moving public IPs",
+      "sublabel": "Do not allow-list the store",
+      "categoryId": "ops",
+      "icon": "🧭",
+      "groupId": "g_risk",
+      "x": 830,
+      "y": 874,
+      "width": 300,
+      "height": 56,
+      "info": "Store links are dynamic and often carrier-NAT'd, and stores can share one address.\nIdentity comes from the device key, never from the source IP"
+    },
+    {
+      "id": "r_offline",
+      "label": "When the link drops",
+      "sublabel": "Keep selling",
+      "categoryId": "ops",
+      "icon": "✈️",
+      "groupId": "g_risk",
+      "x": 830,
+      "y": 946,
+      "width": 300,
+      "height": 56,
+      "info": "The Edge keeps taking orders, keeps writing into XTTDB, and queues everything locally.\nOn reconnect it drains the outbox and pulls what it missed.\nRehearse this on purpose before the first rollout"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_bqdjwxm",
+      "from": "n_hsxahcf",
+      "to": "n_dj7z1cp",
+      "kind": "dotted",
+      "dir": "both"
+    },
+    {
+      "id": "e_97dhfmp",
+      "from": "n_m4dfkju",
+      "to": "n_f64b9l5",
+      "kind": "dotted",
+      "dir": "both"
+    },
+    {
+      "id": "e_70opfl4",
+      "from": "n_f64b9l5",
+      "to": "n_dj7z1cp",
+      "kind": "dashed",
+      "label": "Insert XT orders"
+    },
+    {
+      "id": "e_cb06raa",
+      "from": "n_5o791ql",
+      "to": "n_f64b9l5",
+      "kind": "dashed",
+      "dir": "both"
+    },
+    {
+      "id": "e_print",
+      "from": "n_f64b9l5",
+      "to": "n_printers",
+      "kind": "dashed",
+      "label": "TCP 9100"
+    },
+    {
+      "id": "e_egress",
+      "from": "n_f64b9l5",
+      "to": "n_fw",
+      "kind": "solid",
+      "label": "all cloud traffic leaves here"
+    },
+    {
+      "id": "e_wan",
+      "from": "n_fw",
+      "to": "n_internet",
+      "kind": "solid",
+      "label": "NAT - outbound only"
+    },
+    {
+      "id": "e_rest",
+      "from": "n_internet",
+      "to": "c_alb",
+      "kind": "dashed",
+      "dir": "both",
+      "speed": "fast",
+      "label": "HTTPS 443 - sync, auth, and the live stream"
+    },
+    {
+      "id": "e_shop",
+      "from": "n_customers",
+      "to": "c_cdn",
+      "kind": "solid",
+      "label": "HTTPS 443"
+    },
+    {
+      "id": "e_cdn_alb",
+      "from": "c_cdn",
+      "to": "c_alb",
+      "kind": "dashed",
+      "label": "/api"
+    },
+    {
+      "id": "e_alb_api",
+      "from": "c_alb",
+      "to": "c_api",
+      "kind": "solid"
+    },
+    {
+      "id": "e_alb_stream",
+      "from": "c_alb",
+      "to": "c_stream",
+      "kind": "solid",
+      "label": "/v1/stream"
+    },
+    {
+      "id": "e_stream",
+      "from": "c_kafka",
+      "to": "c_stream",
+      "kind": "dashed",
+      "speed": "fast",
+      "label": "fan out per store"
+    },
+    {
+      "id": "e_outbox",
+      "from": "c_stream",
+      "to": "c_outbox",
+      "kind": "dashed",
+      "dir": "both",
+      "label": "held while away"
+    },
+    {
+      "id": "e_api_saga",
+      "from": "c_api",
+      "to": "c_saga",
+      "kind": "solid"
+    },
+    {
+      "id": "e_api_db",
+      "from": "c_api",
+      "to": "c_db",
+      "kind": "solid"
+    },
+    {
+      "id": "e_api_sec",
+      "from": "c_api",
+      "to": "c_secrets",
+      "kind": "dotted"
+    },
+    {
+      "id": "e_saga_kafka",
+      "from": "c_saga",
+      "to": "c_kafka",
+      "kind": "dashed",
+      "speed": "fast",
+      "label": "publish pos.orders"
+    },
+    {
+      "id": "e_hooks_kafka",
+      "from": "c_hooks",
+      "to": "c_kafka",
+      "kind": "dashed",
+      "dir": "both"
+    }
+  ],
+  "flows": [
+    {
+      "id": "fl_order",
+      "label": "An online order reaches the store",
+      "from": "n_customers",
+      "color": "#38bdf8",
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "c_cdn",
+          "edgeId": "e_shop",
+          "label": "A shopper places an order",
+          "detail": "HTTPS 443 to the hosted page"
+        },
+        {
+          "to": "c_alb",
+          "edgeId": "e_cdn_alb",
+          "label": "The page calls the API",
+          "detail": "same origin, /api"
+        },
+        {
+          "to": "c_api",
+          "edgeId": "e_alb_api",
+          "label": "In through the public endpoint",
+          "detail": "TLS terminates here"
+        },
+        {
+          "to": "c_saga",
+          "edgeId": "e_api_saga",
+          "label": "The order saga runs",
+          "detail": "validate, set status, notify the store, queue webhooks"
+        },
+        {
+          "to": "c_kafka",
+          "edgeId": "e_saga_kafka",
+          "label": "notify_store publishes it",
+          "detail": "topic pos.orders"
+        },
+        {
+          "to": "c_stream",
+          "edgeId": "e_stream",
+          "label": "Central fans it out to that one store",
+          "detail": "one queue per store, and one connection held open to drain it"
+        },
+        {
+          "to": "c_alb",
+          "edgeId": "e_alb_stream",
+          "label": "Out through the same public endpoint",
+          "detail": "port 443 · there is no second port to ask the merchant for"
+        },
+        {
+          "to": "n_internet",
+          "edgeId": "e_rest",
+          "label": "Down to the store",
+          "detail": "on the connection the Edge opened, so nothing is forwarded inward"
+        },
+        {
+          "to": "n_fw",
+          "edgeId": "e_wan",
+          "label": "Back in through the store's NAT",
+          "detail": "no inbound rule, no VPN, no static address"
+        },
+        {
+          "to": "n_f64b9l5",
+          "edgeId": "e_egress",
+          "label": "To the Edge box on the shop floor",
+          "detail": "its own port 5200 never leaves the LAN"
+        },
+        {
+          "to": "n_dj7z1cp",
+          "edgeId": "e_70opfl4",
+          "label": "Written into Exatouch",
+          "detail": "XtOrderWriter · one transaction, Orders through Payments"
+        }
+      ]
+    }
+  ]
+}

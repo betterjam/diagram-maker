@@ -1,0 +1,1803 @@
+{
+  "title": "ecommerce-infrastructure · patching, vulnerability monitoring, deploy and rollback",
+  "categories": [
+    {
+      "id": "repo",
+      "label": "Repositories",
+      "icon": "📚",
+      "color": "#a3e635"
+    },
+    {
+      "id": "pipeline",
+      "label": "Pipelines",
+      "icon": "🚀",
+      "color": "#c084fc"
+    },
+    {
+      "id": "security",
+      "label": "Security",
+      "icon": "🔒",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "compute",
+      "label": "Services",
+      "icon": "⚙️",
+      "color": "#34d399"
+    },
+    {
+      "id": "storage",
+      "label": "Storage",
+      "icon": "📦",
+      "color": "#f472b6"
+    },
+    {
+      "id": "edge",
+      "label": "Edge / CDN",
+      "icon": "☁️",
+      "color": "#38bdf8"
+    },
+    {
+      "id": "ops",
+      "label": "Ops",
+      "icon": "⏰",
+      "color": "#94a3b8"
+    },
+    {
+      "id": "misc",
+      "label": "Other",
+      "icon": "🧩",
+      "color": "#818cf8"
+    },
+    {
+      "id": "cfn",
+      "label": "CloudFormation",
+      "icon": "🧱",
+      "color": "#60a5fa"
+    },
+    {
+      "id": "good",
+      "label": "Succeeded",
+      "icon": "✅",
+      "color": "#4ade80"
+    },
+    {
+      "id": "rolled",
+      "label": "Rolled back",
+      "icon": "↩️",
+      "color": "#fbbf24"
+    },
+    {
+      "id": "bad",
+      "label": "Failed",
+      "icon": "⛔",
+      "color": "#f87171"
+    },
+    {
+      "id": "host",
+      "label": "EC2 hosts",
+      "icon": "🖥️",
+      "color": "#2ec4b6"
+    },
+    {
+      "id": "rapid7",
+      "label": "Rapid7",
+      "icon": "🛰️",
+      "color": "#ff8a4c"
+    },
+    {
+      "id": "decide",
+      "label": "Decision",
+      "icon": "❓",
+      "color": "#e2e8f0",
+      "shape": "diamond"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_dev",
+      "label": "CDK code · defines AWS resources",
+      "kind": "container",
+      "categoryId": "repo",
+      "icon": "✏️"
+    },
+    {
+      "id": "g_pipe",
+      "label": "Devops account",
+      "kind": "container",
+      "categoryId": "pipeline",
+      "icon": "🚀"
+    },
+    {
+      "id": "g_env",
+      "label": "Target account · one per environment (dev · qa · prod)",
+      "kind": "container",
+      "categoryId": "edge",
+      "icon": "☁️"
+    },
+    {
+      "id": "g_apps",
+      "label": "Apps · each with its own resources",
+      "kind": "container",
+      "categoryId": "compute",
+      "icon": "⚙️",
+      "parentId": "g_env"
+    },
+    {
+      "id": "g_ecr",
+      "label": "ECR · images scanned on push",
+      "kind": "container",
+      "categoryId": "storage",
+      "icon": "📦",
+      "parentId": "g_env"
+    },
+    {
+      "id": "g_hosts",
+      "label": "EC2 hosts · Rapid7 at boot",
+      "kind": "container",
+      "categoryId": "host",
+      "icon": "🖥️",
+      "parentId": "g_env"
+    },
+    {
+      "id": "g_cfn",
+      "label": "CloudFormation",
+      "kind": "container",
+      "categoryId": "cfn",
+      "icon": "🧱"
+    },
+    {
+      "id": "g_patch",
+      "label": "How a patch lands",
+      "kind": "container",
+      "categoryId": "ops",
+      "icon": "🩹"
+    },
+    {
+      "id": "g_r7",
+      "label": "Rapid7 Insight",
+      "kind": "container",
+      "categoryId": "rapid7",
+      "icon": "🛰️"
+    },
+    {
+      "id": "g_base",
+      "label": "Base images · chosen in code",
+      "kind": "container",
+      "categoryId": "repo",
+      "icon": "🧬"
+    },
+    {
+      "id": "g_supply",
+      "label": "How EC2 and ECS get their images to run",
+      "kind": "container",
+      "categoryId": "misc",
+      "icon": "📥"
+    },
+    {
+      "id": "g_name",
+      "label": "Naming · product-env-type-id",
+      "kind": "container",
+      "categoryId": "rapid7",
+      "icon": "🏷️"
+    },
+    {
+      "id": "g_gaps",
+      "label": "Not wired yet",
+      "kind": "container",
+      "categoryId": "security",
+      "icon": "⚠️"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n_cfg",
+      "label": "environments.ts + constructs",
+      "sublabel": "one config block per environment",
+      "categoryId": "repo",
+      "x": 0,
+      "y": -52,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_dev",
+      "icon": "✏️",
+      "props": {
+        "file": "src/config/environments.ts",
+        "holds": "sizes, AMI generation, Rapid7 flags, image repos",
+        "so": "a patch or a toggle is a reviewed one-line diff"
+      }
+    },
+    {
+      "id": "n_nag",
+      "label": "cdk-nag · AwsSolutionsChecks",
+      "sublabel": "make test · reported, not a gate",
+      "categoryId": "security",
+      "x": 0,
+      "y": 32,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_dev",
+      "icon": "🔍",
+      "props": {
+        "runs in": "test/nag.test.ts, under jest",
+        "reads": "the synthesized template of the whole stack",
+        "sees": "every resource the stack creates, for every app",
+        "cannot see": "imported resources, or inside a container image",
+        "today": "findings are counted per rule; nothing fails on them"
+      }
+    },
+    {
+      "id": "n_repo",
+      "label": "Bitbucket · main",
+      "sublabel": "ecommerce-infrastructure · trunk",
+      "categoryId": "repo",
+      "x": 0,
+      "y": 174,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_pipe",
+      "type": "GitHub::Repository",
+      "props": {
+        "branch": "main, for dev, qa and prod alike"
+      }
+    },
+    {
+      "id": "n_pipe",
+      "label": "CodePipeline · one per env",
+      "sublabel": "EcommerceInfra-dev · -qa · -prod",
+      "categoryId": "pipeline",
+      "x": 0,
+      "y": 258,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_pipe",
+      "type": "AWS::CodePipeline::Pipeline",
+      "props": {
+        "defined in": "src/pipeline-stack.ts",
+        "stages": "Source, Approval (prod only), Deploy",
+        "independent": "each one is triggered and retried on its own"
+      }
+    },
+    {
+      "id": "n_gate",
+      "label": "Manual approval",
+      "sublabel": "prod only",
+      "categoryId": "security",
+      "x": 0,
+      "y": 342,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_pipe",
+      "icon": "✋",
+      "props": {
+        "dev, qa": "no gate, they deploy on merge"
+      }
+    },
+    {
+      "id": "n_build",
+      "label": "CodeBuild · ecommerce-deploy",
+      "sublabel": "assumes the env's deploy role",
+      "categoryId": "pipeline",
+      "x": 0,
+      "y": 426,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_pipe",
+      "icon": "🔧",
+      "props": {
+        "shared": "one project serves all three pipelines",
+        "install": "yarn install --frozen-lockfile",
+        "credentials": "auto-refreshing cross-account role profile",
+        "timeout": "240 min, long enough to outlast a rollback",
+        "on any exit": "prints the stack's FAILED events"
+      }
+    },
+    {
+      "id": "n_deploy",
+      "label": "make ci-synth → ci-deploy",
+      "sublabel": "cdk deploy --all --method=direct",
+      "categoryId": "pipeline",
+      "x": 0,
+      "y": 510,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_pipe",
+      "icon": "🚀",
+      "props": {
+        "first": "cdk synth, from src/integ.ts",
+        "then": "check the stack status, heal it if wedged",
+        "then deploy": "cdk deploy --all --require-approval never"
+      }
+    },
+    {
+      "id": "b_ami",
+      "label": "Host OS · EcsOptimizedImage",
+      "sublabel": "compute.ts · AL2 or AL2023 per env",
+      "categoryId": "host",
+      "x": 0,
+      "y": 652,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_base",
+      "icon": "🖥️",
+      "props": {
+        "where": "src/constructs/compute.ts, on the launch template",
+        "library": "CDK's EcsOptimizedImage: AWS's ECS-optimized AMIs",
+        "choice": "amazonLinux2023 or amazonLinux2, by the ec2Ami flag",
+        "hardware": "AmiHardwareType.STANDARD, x86_64",
+        "AMI id": "AWS's recommended one, resolved at each deploy",
+        "so": "a newer AWS AMI rolls the hosts on the next deploy"
+      }
+    },
+    {
+      "id": "b_from",
+      "label": "Container · Dockerfile FROM",
+      "sublabel": "Docker Hub · symmetricds-pro:3.16.4",
+      "categoryId": "storage",
+      "x": 0,
+      "y": 730,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_base",
+      "icon": "🐳",
+      "props": {
+        "SymmetricDS": "docker/Dockerfile: FROM jumpmind/symmetricds-pro:3.16.4",
+        "SQL Server": "xtdbsqlserver/Dockerfile: mssql/server:2022-latest",
+        "SQL Server image": "defined, switched off in every environment",
+        "pulled by": "cdk deploy in CodeBuild, logged in to Docker Hub",
+        "pinned tag": "patched by bumping the version in the Dockerfile",
+        "floating tag": "2022-latest can change under any rebuild"
+      }
+    },
+    {
+      "id": "b_app",
+      "label": "App images · chosen elsewhere",
+      "sublabel": "in each app's own Dockerfile",
+      "categoryId": "storage",
+      "x": 0,
+      "y": 808,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_base",
+      "icon": "📦",
+      "props": {
+        "images": "liquorcart/magento, magentoagentapi, xtdatatransformer",
+        "base image": "set in each app's own repo and pipeline",
+        "this stack": "only names the repo and the tag latest",
+        "so": "what runs is whatever was pushed last"
+      }
+    },
+    {
+      "id": "a_mag",
+      "label": "Magento · store, admin, REST",
+      "sublabel": "Aurora MySQL · OpenSearch · Redis",
+      "categoryId": "compute",
+      "x": 370,
+      "y": 0,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_apps",
+      "icon": "🛒",
+      "props": {
+        "ECS services": "MagentoService, MagentoServiceAdmin, MagentoServiceRest",
+        "image": "liquorcart/magento:latest",
+        "its own": "ALB, WAF, CloudFront, Aurora MySQL, OpenSearch, Redis",
+        "deploy": "minHealthy 100%, max 200%, circuit breaker"
+      }
+    },
+    {
+      "id": "a_mid",
+      "label": "Middleware · C# agent API",
+      "sublabel": "Aurora PostgreSQL · RabbitMQ",
+      "categoryId": "compute",
+      "x": 370,
+      "y": 84,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_apps",
+      "icon": "🔌",
+      "props": {
+        "ECS service": "MiddlewareService",
+        "containers": "agent + xtdatatransformer",
+        "images": "magentoagentapi:latest, xtdatatransformer:latest",
+        "its own": "ALB, WAF, Aurora PostgreSQL",
+        "RabbitMQ": "Amazon MQ broker, shared with Magento",
+        "deploy": "rolling, with no circuit breaker set"
+      }
+    },
+    {
+      "id": "a_sym",
+      "label": "SymmetricDS · data sync",
+      "sublabel": "FSx volume · SQL Server XTTDB",
+      "categoryId": "compute",
+      "x": 370,
+      "y": 168,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_apps",
+      "icon": "🔄",
+      "props": {
+        "ECS service": "SymmetricService",
+        "image": "built from ./docker by cdk deploy",
+        "its own": "ALB, WAF, FSx volume, SQL Server",
+        "deploy": "minHealthy 0%, max 100%, circuit breaker"
+      }
+    },
+    {
+      "id": "a_cen",
+      "label": "Central app · Angular SPA",
+      "sublabel": "S3 + CloudFront · no image, no host",
+      "categoryId": "edge",
+      "x": 370,
+      "y": 252,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_apps",
+      "icon": "🌎",
+      "props": {
+        "its own": "S3 bucket, CloudFront, certificate stack in us-east-1",
+        "image": "none",
+        "hosts": "none",
+        "so": "the template check is the only one that applies"
+      }
+    },
+    {
+      "id": "d_img",
+      "label": "Needs an image?",
+      "sublabel": "yes → scan it",
+      "categoryId": "decide",
+      "x": 674,
+      "y": 95,
+      "width": 140,
+      "height": 84,
+      "groupId": "g_env",
+      "shape": "diamond",
+      "info": "Asked of every app the stack deploys.\nNo: nothing to scan. The central app is S3 and CloudFront only."
+    },
+    {
+      "id": "d_ec2",
+      "label": "Runs on EC2?",
+      "sublabel": "yes → agent",
+      "categoryId": "decide",
+      "x": 1176,
+      "y": 95,
+      "width": 140,
+      "height": 84,
+      "groupId": "g_env",
+      "shape": "diamond",
+      "info": "All three ECS services are placed on the EC2 hosts by the capacity provider.\nNo host, no agent: Rapid7 cannot run on RDS, OpenSearch, ElastiCache or Amazon MQ."
+    },
+    {
+      "id": "e_mag",
+      "label": "liquorcart/magento",
+      "sublabel": "named repo · findings carry its name",
+      "categoryId": "storage",
+      "x": 872,
+      "y": 0,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_ecr",
+      "type": "AWS::ECR::Repository",
+      "props": {
+        "referenced by": "Repository.fromRepositoryName",
+        "tag": "latest",
+        "built by": "the app's own pipeline, not this repo"
+      }
+    },
+    {
+      "id": "e_mid",
+      "label": "magentoagentapi",
+      "sublabel": "+ xtdatatransformer · named repos",
+      "categoryId": "storage",
+      "x": 872,
+      "y": 84,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_ecr",
+      "type": "AWS::ECR::Repository",
+      "props": {
+        "referenced by": "Repository.fromRepositoryName",
+        "tag": "latest",
+        "built by": "the apps' own pipelines, not this repo"
+      }
+    },
+    {
+      "id": "e_sym",
+      "label": "CDK asset repo",
+      "sublabel": "built from ./docker · hash-only tag",
+      "categoryId": "storage",
+      "x": 872,
+      "y": 168,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_ecr",
+      "type": "AWS::ECR::Repository",
+      "props": {
+        "repo": "cdk-hnb659fds-container-assets-<account>-<region>",
+        "tag": "a content hash",
+        "holds": "the SymmetricDS image, built during cdk deploy",
+        "problem": "a scanner cannot tell which app the image is"
+      }
+    },
+    {
+      "id": "e_named",
+      "label": "liquorcart/symmetric · opt-in",
+      "sublabel": "make symmetric-image-push",
+      "categoryId": "storage",
+      "x": 872,
+      "y": 252,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_ecr",
+      "type": "AWS::ECR::Repository",
+      "props": {
+        "creates the repo with": "scanOnPush=true",
+        "then": "set symmetricImageRepo in environments.ts",
+        "order": "create the repo, push the tag, then flip the flag"
+      }
+    },
+    {
+      "id": "h_lt",
+      "label": "Launch template",
+      "sublabel": "ECS-optimized AMI · AL2 → AL2023",
+      "categoryId": "host",
+      "x": 1374,
+      "y": 0,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_hosts",
+      "icon": "📋",
+      "props": {
+        "per-env flag": "ec2Ami: 'al2' | 'al2023'",
+        "dev": "al2023",
+        "qa, prod": "al2 until each flips its own flag",
+        "user data": "hostname, Rapid7 agent, FSx mounts"
+      }
+    },
+    {
+      "id": "h_asg",
+      "label": "ASG1 · rolling update",
+      "sublabel": "1 host per 5 min · min-1 in service",
+      "categoryId": "host",
+      "x": 1374,
+      "y": 84,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_hosts",
+      "icon": "♻️",
+      "props": {
+        "maxBatchSize": 1,
+        "pauseTime": "5 minutes",
+        "minInstancesInService": "min capacity - 1",
+        "tasks": "ECS managed draining moves them off first",
+        "without it": "hosts keep the old template forever"
+      }
+    },
+    {
+      "id": "h_name",
+      "label": "1 · Unique hostname",
+      "sublabel": "liquorcart-<env>-ec2-asg1-<id8>",
+      "categoryId": "host",
+      "x": 1374,
+      "y": 168,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_hosts",
+      "icon": "🏷️",
+      "props": {
+        "Name tag": "LIQUORCART-<ENV>-EC2-ASG1, shared by the group",
+        "hostname": "adds the last 8 characters of the instance id",
+        "set": "first in user data, before any agent starts",
+        "why": "Rapid7 keys assets on hostname; duplicates merge"
+      }
+    },
+    {
+      "id": "h_r7",
+      "label": "2 · Rapid7 Insight Agent",
+      "sublabel": "token read from Secrets Manager",
+      "categoryId": "rapid7",
+      "x": 1374,
+      "y": 252,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_hosts",
+      "icon": "🛡️",
+      "props": {
+        "one agent": "per host, never per task or sidecar",
+        "token": "read at boot, never written into user data",
+        "install": "yum install the RPM, then configure_agent.sh --token",
+        "attributes": "LIQUORCART, <ENV>, EC2-ASG1",
+        "if it fails": "logged; the host still joins the cluster",
+        "enabled by": "rapid7Enabled + rapid7InstallerUri"
+      },
+      "info": "Then the FSx volumes mount and the host joins the ECS cluster."
+    },
+    {
+      "id": "x_r7",
+      "label": "InsightVM · one asset per host",
+      "sublabel": "keyed on the hostname it reports",
+      "categoryId": "rapid7",
+      "x": 1374,
+      "y": 446,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_r7",
+      "icon": "🛰️",
+      "props": {
+        "sees": "the host OS underneath the containers",
+        "no agent on": "RDS, OpenSearch, ElastiCache, Amazon MQ",
+        "containers": "not its job: that is the image scan"
+      }
+    },
+    {
+      "id": "x_find",
+      "label": "Finding: Amazon Linux 2 is EOL",
+      "sublabel": "flagged on every container host",
+      "categoryId": "rapid7",
+      "x": 1374,
+      "y": 530,
+      "width": 250,
+      "height": 46,
+      "groupId": "g_r7",
+      "icon": "🚩",
+      "props": {
+        "end of standard support": "2025-06-30",
+        "fix": "move the hosts to the AL2023 ECS-optimized AMI"
+      }
+    },
+    {
+      "id": "p_img",
+      "label": "Container → rebuild the image",
+      "sublabel": "push, then ECS rolls the service",
+      "categoryId": "storage",
+      "x": 1058,
+      "y": 446,
+      "width": 252,
+      "height": 46,
+      "groupId": "g_patch",
+      "icon": "📦",
+      "props": {
+        "never": "patch a running task",
+        "rollout": "ECS rolling deploy with circuit breaker"
+      }
+    },
+    {
+      "id": "p_host",
+      "label": "Host OS → replace the host",
+      "sublabel": "new AMI in the launch template",
+      "categoryId": "host",
+      "x": 1058,
+      "y": 530,
+      "width": 252,
+      "height": 46,
+      "groupId": "g_patch",
+      "icon": "🖥️",
+      "props": {
+        "never": "yum update on a live host",
+        "the change": "ec2Ami in environments.ts",
+        "rollout": "ASG1 rolling update, one host every 5 min"
+      }
+    },
+    {
+      "id": "p_mgd",
+      "label": "Managed service → AWS patches",
+      "sublabel": "no agent fits · version in config",
+      "categoryId": "ops",
+      "x": 1058,
+      "y": 614,
+      "width": 252,
+      "height": 46,
+      "groupId": "g_patch",
+      "icon": "🗄️",
+      "props": {
+        "which": "RDS, OpenSearch, ElastiCache, Amazon MQ, FSx",
+        "major versions": "set in environments.ts",
+        "Rapid7": "authenticated scans only"
+      }
+    },
+    {
+      "id": "nm_rule",
+      "label": "PRODUCT-ENV-TYPE-ID",
+      "sublabel": "the same four parts for every asset",
+      "categoryId": "rapid7",
+      "x": 1374,
+      "y": 670,
+      "width": 278,
+      "height": 46,
+      "groupId": "g_name",
+      "icon": "🏷️",
+      "props": {
+        "PRODUCT": "LIQUORCART, so one filter finds the estate",
+        "ENV": "DEV, QA or PROD",
+        "TYPE": "EC2, ECS, RDS, OS, REDIS, MQ, ALB, FSX",
+        "ID": "the role; a suffix only where instances repeat",
+        "applied as": "tags and hostnames, never by renaming a resource",
+        "helper": "assetName() and assetHost() in src/lib/naming.ts"
+      }
+    },
+    {
+      "id": "nm_host",
+      "label": "liquorcart-qa-ec2-asg1-0a1b2c3d",
+      "sublabel": "hostname · agent reports it · live",
+      "categoryId": "host",
+      "x": 1374,
+      "y": 738,
+      "width": 278,
+      "height": 46,
+      "groupId": "g_name",
+      "icon": "🖥️",
+      "props": {
+        "for": "anything with an OS and an agent",
+        "form": "lower case, hyphens only, unique per instance",
+        "suffix": "last 8 characters of the instance id",
+        "Rapid7": "keys the asset on this name",
+        "Name tag": "LIQUORCART-QA-EC2-ASG1, shared by the group",
+        "status": "in place"
+      }
+    },
+    {
+      "id": "nm_tag",
+      "label": "LIQUORCART-QA-RDS-MYSQL",
+      "sublabel": "Name tag · no-agent assets · proposed",
+      "categoryId": "ops",
+      "x": 1374,
+      "y": 806,
+      "width": 278,
+      "height": 46,
+      "groupId": "g_name",
+      "icon": "🗄️",
+      "props": {
+        "ECS services": "…-ECS-MAGENTO, -ECS-MIDDLEWARE, -ECS-SYMMETRIC",
+        "databases": "…-RDS-MYSQL, -RDS-POSTGRES, -RDS-SQLSERVER",
+        "search, cache": "…-OS-MAGENTO, …-REDIS-MAGENTO",
+        "broker, storage": "…-MQ-RABBIT, …-FSX-ONTAP",
+        "load balancers": "…-ALB-MAGENTO, -ALB-MIDDLEWARE, -ALB-SYMMETRIC",
+        "reaches Rapid7": "through an AWS discovery connection",
+        "status": "proposed; only the EC2 group is tagged today"
+      }
+    },
+    {
+      "id": "nm_img",
+      "label": "liquorcart/symmetric:<tag>",
+      "sublabel": "image repo · env = account · proposed",
+      "categoryId": "storage",
+      "x": 1374,
+      "y": 874,
+      "width": 278,
+      "height": 46,
+      "groupId": "g_name",
+      "type": "AWS::ECR::Repository",
+      "props": {
+        "form": "product/app, so a finding names its app",
+        "ENV": "the account's registry, not the name",
+        "repos": "liquorcart/magento, /agent-api, /transformer, /symmetric",
+        "today": "magentoagentapi and xtdatatransformer have no prefix",
+        "status": "proposed; liquorcart/magento already fits"
+      }
+    },
+    {
+      "id": "c_prog",
+      "label": "UPDATE_IN_PROGRESS",
+      "sublabel": "what changed, in dependency order",
+      "categoryId": "cfn",
+      "x": 370,
+      "y": 510,
+      "width": 264,
+      "height": 46,
+      "groupId": "g_cfn",
+      "icon": "⏳",
+      "props": {
+        "stack": "ecommerce, one per environment",
+        "ECS services": "rolling deploy, each by its own settings",
+        "Magento": "never below one healthy task",
+        "ASG1": "rolling update, one host at a time",
+        "untouched": "anything whose definition did not change"
+      }
+    },
+    {
+      "id": "c_ok",
+      "label": "UPDATE_COMPLETE",
+      "sublabel": "old resources removed last",
+      "categoryId": "good",
+      "x": 730,
+      "y": 510,
+      "width": 264,
+      "height": 46,
+      "groupId": "g_cfn",
+      "icon": "✅",
+      "props": {
+        "cleanup": "replaced resources go only after success",
+        "pipeline": "green"
+      }
+    },
+    {
+      "id": "s_ecs",
+      "label": "ECS rolls back on its own",
+      "sublabel": "unhealthy → last working version",
+      "categoryId": "rolled",
+      "x": 730,
+      "y": 610,
+      "width": 264,
+      "height": 46,
+      "groupId": "g_cfn",
+      "icon": "🔁",
+      "props": {
+        "setting": "circuitBreaker: { rollback: true }",
+        "trips when": "new tasks keep failing to start or pass health checks",
+        "then": "ECS redeploys the last deployment that completed",
+        "Magento": "old tasks keep serving throughout (min healthy 100%)",
+        "SymmetricDS": "one task, stopped first: down until the rollback lands",
+        "Middleware": "not set: a bad deploy waits for CloudFormation's timeout",
+        "after": "the service update fails, so the stack rolls back too"
+      }
+    },
+    {
+      "id": "c_rb",
+      "label": "UPDATE_ROLLBACK_IN_PROGRESS",
+      "sublabel": "previous template re-applied",
+      "categoryId": "rolled",
+      "x": 370,
+      "y": 710,
+      "width": 264,
+      "height": 46,
+      "groupId": "g_cfn",
+      "icon": "↩️",
+      "props": {
+        "trigger": "any resource fails to create or update",
+        "ECS": "the service is already back on its last working version",
+        "restores": "previous task definition and launch template",
+        "nobody": "has to start it: CloudFormation does"
+      }
+    },
+    {
+      "id": "c_rbok",
+      "label": "UPDATE_ROLLBACK_COMPLETE",
+      "sublabel": "runs what it ran before · red build",
+      "categoryId": "rolled",
+      "x": 730,
+      "y": 710,
+      "width": 264,
+      "height": 46,
+      "groupId": "g_cfn",
+      "icon": "🟡",
+      "props": {
+        "environment": "same template as before the deploy",
+        "pipeline": "red; its log ends with the failed events"
+      },
+      "info": "Careful: a RETAIN resource created during the failed update stays behind.\nIts name is taken, so the next create fails. Import it by name instead."
+    },
+    {
+      "id": "c_rbfail",
+      "label": "UPDATE_ROLLBACK_FAILED",
+      "sublabel": "wedged: no update is accepted",
+      "categoryId": "bad",
+      "x": 370,
+      "y": 810,
+      "width": 264,
+      "height": 46,
+      "groupId": "g_cfn",
+      "icon": "⛔",
+      "props": {
+        "meaning": "CloudFormation could not restore a resource",
+        "effect": "every later deploy bounces off the stack"
+      }
+    },
+    {
+      "id": "c_heal",
+      "label": "cdk rollback --all",
+      "sublabel": "ci-deploy runs it before deploying",
+      "categoryId": "pipeline",
+      "x": 730,
+      "y": 810,
+      "width": 264,
+      "height": 46,
+      "groupId": "g_cfn",
+      "icon": "🩹",
+      "props": {
+        "where": "Makefile, target ci-deploy",
+        "stack busy": "wait for it to settle",
+        "stack wedged": "cdk rollback --all, then deploy",
+        "permission": "ContinueUpdateRollback on the deploy role"
+      }
+    },
+    {
+      "id": "sp_a1",
+      "label": "EC2 · AWS publishes the AMI",
+      "sublabel": "ECS-optimized, patched by AWS",
+      "categoryId": "host",
+      "x": 0,
+      "y": 952,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "icon": "☁️",
+      "props": {
+        "what": "Amazon Linux with Docker and the ECS agent already on it",
+        "generation": "AL2 or AL2023, chosen by ec2Ami in environments.ts",
+        "we build": "no AMI of our own"
+      }
+    },
+    {
+      "id": "sp_a2",
+      "label": "SSM public parameter",
+      "sublabel": "optimized-ami/…/recommended",
+      "categoryId": "host",
+      "x": 266,
+      "y": 952,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "icon": "🔎",
+      "props": {
+        "path": "/aws/service/ecs/optimized-ami/<generation>/recommended/image_id",
+        "holds": "the id of AWS's current recommended AMI",
+        "moves": "whenever AWS publishes a patched AMI"
+      }
+    },
+    {
+      "id": "sp_a3",
+      "label": "Resolved at each deploy",
+      "sublabel": "CloudFormation → launch template",
+      "categoryId": "cfn",
+      "x": 532,
+      "y": 952,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "icon": "🧱",
+      "props": {
+        "how": "the AMI id is a template parameter read from SSM",
+        "if it changed": "the launch template gets a new version",
+        "then": "ASG1 rolls the hosts, one at a time"
+      }
+    },
+    {
+      "id": "sp_a4",
+      "label": "ASG1 launches the instance",
+      "sublabel": "EC2 boots from that AMI",
+      "categoryId": "host",
+      "x": 798,
+      "y": 952,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "icon": "🖥️",
+      "props": {
+        "disk": "40 GB gp3, encrypted",
+        "user data": "hostname, Rapid7 agent, FSx mounts"
+      }
+    },
+    {
+      "id": "sp_a5",
+      "label": "Host joins the ECS cluster",
+      "sublabel": "after hostname, Rapid7, FSx mounts",
+      "categoryId": "host",
+      "x": 1064,
+      "y": 952,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "icon": "🧊",
+      "props": {
+        "who": "the ECS agent that ships in the AMI",
+        "cluster": "set in user data by the capacity provider setup",
+        "now": "ECS can place tasks on it"
+      }
+    },
+    {
+      "id": "sp_b1",
+      "label": "ECS · image built and pushed",
+      "sublabel": "to ECR, by pipeline or cdk deploy",
+      "categoryId": "storage",
+      "x": 0,
+      "y": 1040,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "icon": "🐳",
+      "props": {
+        "Magento, agent API, transformer": "built and pushed by each app's own pipeline",
+        "SymmetricDS": "built by cdk deploy from ./docker",
+        "base": "the FROM line of each Dockerfile",
+        "lands in": "ECR in the environment's account, as repo:tag",
+        "scan": "on push, where the repo has it switched on"
+      }
+    },
+    {
+      "id": "sp_b2",
+      "label": "Task definition names it",
+      "sublabel": "repo:latest, or the asset hash",
+      "categoryId": "compute",
+      "x": 266,
+      "y": 1040,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "type": "AWS::ECS::TaskDefinition",
+      "props": {
+        "app images": "ContainerImage.fromEcrRepository(repo, 'latest')",
+        "SymmetricDS": "ContainerImage.fromAsset('./docker')",
+        "latest": "a new push runs only once the service redeploys"
+      }
+    },
+    {
+      "id": "sp_b3",
+      "label": "ECS places a task on a host",
+      "sublabel": "through the capacity provider",
+      "categoryId": "compute",
+      "x": 532,
+      "y": 1040,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "type": "AWS::ECS::Service",
+      "props": {
+        "strategy": "the ASG1 capacity provider, weight 100",
+        "no room": "managed scaling adds a host first"
+      }
+    },
+    {
+      "id": "sp_b4",
+      "label": "ECS agent pulls and runs it",
+      "sublabel": "from ECR, with the execution role",
+      "categoryId": "compute",
+      "x": 798,
+      "y": 1040,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "icon": "▶️",
+      "props": {
+        "pull": "the agent on the host fetches repo:tag from ECR",
+        "permission": "the task execution role, not the host's own role",
+        "then": "the container starts and health checks begin"
+      }
+    },
+    {
+      "id": "sp_b5",
+      "label": "Only healthy tasks are used",
+      "sublabel": "ALB routes to healthy targets only",
+      "categoryId": "good",
+      "x": 1064,
+      "y": 1040,
+      "width": 236,
+      "height": 46,
+      "groupId": "g_supply",
+      "icon": "✅",
+      "props": {
+        "load balancer check": "every 40 s; 2 passes to be healthy, 10 fails to be out",
+        "paths": "Magento /, Middleware /, SymmetricDS /app",
+        "Magento container check": "its FSx mount is present, every 30 s",
+        "grace period": "2 minutes after start before failures count",
+        "until healthy": "the task gets no traffic",
+        "during a deploy": "Magento's old tasks stop only once new ones pass",
+        "never healthy": "replaced; repeated failures trip the circuit breaker"
+      },
+      "info": "Any answer from 200 to 499 counts as healthy for Magento and SymmetricDS:\nthe check proves the server answers, not that the page is right."
+    },
+    {
+      "id": "gap_nag",
+      "label": "cdk-nag does not gate yet",
+      "sublabel": "findings print; the build stays green",
+      "categoryId": "security",
+      "x": 0,
+      "y": 1182,
+      "width": 250,
+      "height": 50,
+      "groupId": "g_gaps",
+      "icon": "⚠️",
+      "info": "The pack runs under jest and its findings are counted per rule.\nNothing fails on them yet, and the pipeline's buildspec does not run it."
+    },
+    {
+      "id": "gap_scan",
+      "label": "App repos are imported by name",
+      "sublabel": "their scan settings live elsewhere",
+      "categoryId": "security",
+      "x": 264,
+      "y": 1182,
+      "width": 250,
+      "height": 50,
+      "groupId": "g_gaps",
+      "icon": "⚠️",
+      "info": "liquorcart/magento, magentoagentapi and xtdatatransformer are looked up, not created.\nThis stack cannot turn scan-on-push on for them, and cdk-nag cannot see inside them."
+    },
+    {
+      "id": "gap_sym",
+      "label": "Symmetric image is a CDK asset",
+      "sublabel": "symmetricImageRepo unset in every env",
+      "categoryId": "security",
+      "x": 528,
+      "y": 1182,
+      "width": 250,
+      "height": 50,
+      "groupId": "g_gaps",
+      "icon": "⚠️",
+      "info": "Its findings carry a content hash instead of a name until the image moves to liquorcart/symmetric."
+    },
+    {
+      "id": "gap_env",
+      "label": "qa and prod hosts still on AL2",
+      "sublabel": "ec2Ami: 'al2023' is set for dev only",
+      "categoryId": "security",
+      "x": 792,
+      "y": 1182,
+      "width": 250,
+      "height": 50,
+      "groupId": "g_gaps",
+      "icon": "⚠️",
+      "info": "The end-of-life finding stays open in an environment until it flips its own flag."
+    },
+    {
+      "id": "gap_cb",
+      "label": "Middleware: no circuit breaker",
+      "sublabel": "bad deploys wait for the CFN timeout",
+      "categoryId": "security",
+      "x": 1056,
+      "y": 1182,
+      "width": 250,
+      "height": 50,
+      "groupId": "g_gaps",
+      "icon": "⚠️",
+      "info": "MiddlewareService sets no circuitBreaker, unlike Magento and SymmetricDS.\nA deploy whose tasks never become healthy keeps retrying until CloudFormation's own wait runs out."
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_test",
+      "from": "n_cfg",
+      "to": "n_nag",
+      "kind": "solid",
+      "label": "make test"
+    },
+    {
+      "id": "e_push",
+      "from": "n_nag",
+      "to": "n_repo",
+      "kind": "solid",
+      "label": "merge to main"
+    },
+    {
+      "id": "e_src",
+      "from": "n_repo",
+      "to": "n_pipe",
+      "kind": "dashed",
+      "label": "triggers"
+    },
+    {
+      "id": "e_gate",
+      "from": "n_pipe",
+      "to": "n_gate",
+      "kind": "solid"
+    },
+    {
+      "id": "e_bld",
+      "from": "n_gate",
+      "to": "n_build",
+      "kind": "solid"
+    },
+    {
+      "id": "e_mk",
+      "from": "n_build",
+      "to": "n_deploy",
+      "kind": "solid"
+    },
+    {
+      "id": "e_upd",
+      "from": "n_deploy",
+      "to": "c_prog",
+      "kind": "dashed",
+      "label": "UpdateStack",
+      "speed": "fast"
+    },
+    {
+      "id": "e_apply",
+      "from": "c_prog",
+      "to": "g_env",
+      "kind": "dashed",
+      "label": "updates in place",
+      "route": "stack"
+    },
+    {
+      "id": "e_ok",
+      "from": "c_prog",
+      "to": "c_ok",
+      "kind": "solid",
+      "label": "all healthy"
+    },
+    {
+      "id": "e_fail",
+      "from": "c_prog",
+      "to": "c_rb",
+      "kind": "solid",
+      "label": "a resource fails"
+    },
+    {
+      "id": "e_ecs",
+      "from": "c_prog",
+      "to": "s_ecs",
+      "kind": "solid",
+      "label": "health checks fail",
+      "route": "stack"
+    },
+    {
+      "id": "e_ecsfail",
+      "from": "s_ecs",
+      "to": "c_rb",
+      "kind": "solid",
+      "label": "update fails",
+      "route": "stack"
+    },
+    {
+      "id": "e_rbok",
+      "from": "c_rb",
+      "to": "c_rbok",
+      "kind": "solid",
+      "label": "restored"
+    },
+    {
+      "id": "e_rbfail",
+      "from": "c_rb",
+      "to": "c_rbfail",
+      "kind": "dotted",
+      "label": "rollback fails too"
+    },
+    {
+      "id": "e_heal",
+      "from": "c_rbfail",
+      "to": "c_heal",
+      "kind": "dashed",
+      "label": "next deploy"
+    },
+    {
+      "id": "e_cont",
+      "from": "c_heal",
+      "to": "c_rbok",
+      "kind": "solid",
+      "label": "finishes it"
+    },
+    {
+      "id": "e_q1",
+      "from": "g_apps",
+      "to": "d_img",
+      "kind": "solid"
+    },
+    {
+      "id": "e_y1",
+      "from": "d_img",
+      "to": "g_ecr",
+      "kind": "solid"
+    },
+    {
+      "id": "e_q2",
+      "from": "g_ecr",
+      "to": "d_ec2",
+      "kind": "solid"
+    },
+    {
+      "id": "e_y2",
+      "from": "d_ec2",
+      "to": "g_hosts",
+      "kind": "solid"
+    },
+    {
+      "id": "e_optin",
+      "from": "e_sym",
+      "to": "e_named",
+      "kind": "dotted",
+      "label": "move to"
+    },
+    {
+      "id": "e_h1",
+      "from": "h_lt",
+      "to": "h_asg",
+      "kind": "solid",
+      "label": "new version"
+    },
+    {
+      "id": "e_h2",
+      "from": "h_asg",
+      "to": "h_name",
+      "kind": "solid",
+      "label": "each new host"
+    },
+    {
+      "id": "e_h3",
+      "from": "h_name",
+      "to": "h_r7",
+      "kind": "solid"
+    },
+    {
+      "id": "e_enrol",
+      "from": "h_r7",
+      "to": "x_r7",
+      "kind": "dashed",
+      "label": "enrols",
+      "speed": "fast"
+    },
+    {
+      "id": "e_find",
+      "from": "x_r7",
+      "to": "x_find",
+      "kind": "solid"
+    },
+    {
+      "id": "e_fix",
+      "from": "x_find",
+      "to": "p_host",
+      "kind": "solid",
+      "label": "fix"
+    },
+    {
+      "id": "e_sa1",
+      "from": "sp_a1",
+      "to": "sp_a2",
+      "kind": "solid"
+    },
+    {
+      "id": "e_sa2",
+      "from": "sp_a2",
+      "to": "sp_a3",
+      "kind": "solid"
+    },
+    {
+      "id": "e_sa3",
+      "from": "sp_a3",
+      "to": "sp_a4",
+      "kind": "solid"
+    },
+    {
+      "id": "e_sa4",
+      "from": "sp_a4",
+      "to": "sp_a5",
+      "kind": "solid"
+    },
+    {
+      "id": "e_sb1",
+      "from": "sp_b1",
+      "to": "sp_b2",
+      "kind": "solid"
+    },
+    {
+      "id": "e_sb2",
+      "from": "sp_b2",
+      "to": "sp_b3",
+      "kind": "solid"
+    },
+    {
+      "id": "e_sb3",
+      "from": "sp_b3",
+      "to": "sp_b4",
+      "kind": "solid"
+    },
+    {
+      "id": "e_sb4",
+      "from": "sp_b4",
+      "to": "sp_b5",
+      "kind": "solid"
+    },
+    {
+      "id": "e_sab",
+      "from": "sp_a5",
+      "to": "sp_b4",
+      "kind": "dashed",
+      "label": "on this host",
+      "route": "stack"
+    }
+  ],
+  "net": [],
+  "flows": [
+    {
+      "id": "fl_deploy",
+      "label": "A change ships to an environment",
+      "from": "n_cfg",
+      "color": "#c084fc",
+      "beatMs": 900,
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "n_nag",
+          "edgeId": "e_test",
+          "label": "Check the template before it is merged",
+          "detail": "make test · cdk-nag reads the synthesized stack and reports per rule"
+        },
+        {
+          "to": "n_repo",
+          "edgeId": "e_push",
+          "label": "Merge to main",
+          "detail": "trunk-based: dev, qa and prod all build from main"
+        },
+        {
+          "to": "n_pipe",
+          "edgeId": "e_src",
+          "label": "Each environment has its own pipeline",
+          "detail": "EcommerceInfra-dev, -qa and -prod run and retry independently"
+        },
+        {
+          "to": "n_gate",
+          "edgeId": "e_gate",
+          "label": "Prod waits for a person",
+          "detail": "manual approval · dev and qa go straight through"
+        },
+        {
+          "to": "n_build",
+          "edgeId": "e_bld",
+          "label": "One shared CodeBuild project does the work",
+          "detail": "it assumes the cross-account deploy role of the target environment"
+        },
+        {
+          "to": "n_deploy",
+          "edgeId": "e_mk",
+          "label": "Synthesize, then deploy",
+          "detail": "make ci-synth · make ci-deploy · cdk deploy --all --method=direct"
+        },
+        {
+          "to": "c_prog",
+          "edgeId": "e_upd",
+          "label": "CloudFormation takes over",
+          "detail": "it compares the new template with the running one and changes only what differs"
+        },
+        {
+          "to": "g_env",
+          "edgeId": "e_apply",
+          "label": "Each resource updates by its own policy",
+          "beats": 2,
+          "detail": "ECS services roll their tasks · ASG1 replaces one host every 5 minutes"
+        },
+        {
+          "to": "c_prog",
+          "edgeId": "e_apply",
+          "label": "Only healthy tasks take over",
+          "detail": "new tasks get traffic once they pass their checks; only then do the old ones stop"
+        },
+        {
+          "to": "c_ok",
+          "edgeId": "e_ok",
+          "label": "UPDATE_COMPLETE",
+          "detail": "only now are the replaced resources cleaned up"
+        }
+      ]
+    },
+    {
+      "id": "fl_rollback",
+      "label": "An update fails and rolls back by itself",
+      "from": "n_deploy",
+      "color": "#f87171",
+      "beatMs": 1200,
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "c_prog",
+          "edgeId": "e_upd",
+          "label": "A deploy starts like any other",
+          "detail": "UpdateStack on the environment's stack"
+        },
+        {
+          "to": "g_env",
+          "edgeId": "e_apply",
+          "label": "ECS starts the new tasks",
+          "detail": "Magento keeps the old ones serving meanwhile: min healthy 100%, max 200%"
+        },
+        {
+          "to": "c_prog",
+          "edgeId": "e_apply",
+          "label": "The new tasks never pass their health checks",
+          "detail": "load balancer and container checks, after a 2 minute grace period"
+        },
+        {
+          "to": "s_ecs",
+          "edgeId": "e_ecs",
+          "label": "ECS gives up and rolls the service back itself",
+          "beats": 2,
+          "detail": "circuit breaker: back to the last deployment that completed, with nobody acting"
+        },
+        {
+          "to": "c_rb",
+          "edgeId": "e_ecsfail",
+          "label": "The failed update rolls the stack back too",
+          "detail": "CloudFormation puts every resource it touched back to its previous definition"
+        },
+        {
+          "to": "c_rbok",
+          "edgeId": "e_rbok",
+          "label": "The environment runs what it ran before",
+          "detail": "the build is red and its log ends with the failed events"
+        }
+      ]
+    },
+    {
+      "id": "fl_wedged",
+      "label": "A rollback gets stuck, and the next deploy heals it",
+      "from": "c_rb",
+      "color": "#fbbf24",
+      "beatMs": 1200,
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "c_rbfail",
+          "edgeId": "e_rbfail",
+          "label": "The rollback itself fails",
+          "detail": "UPDATE_ROLLBACK_FAILED · the stack accepts no further updates"
+        },
+        {
+          "to": "c_heal",
+          "edgeId": "e_heal",
+          "label": "The next ci-deploy looks at the stack first",
+          "detail": "busy: it waits · wedged: it runs cdk rollback --all before deploying"
+        },
+        {
+          "to": "c_rbok",
+          "edgeId": "e_cont",
+          "label": "The rollback is finished for it",
+          "detail": "ContinueUpdateRollback, which the deploy role is granted for exactly this"
+        }
+      ]
+    },
+    {
+      "id": "fl_rule",
+      "label": "Which checks an app gets",
+      "from": "g_apps",
+      "color": "#34d399",
+      "beatMs": 1200,
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "d_img",
+          "edgeId": "e_q1",
+          "label": "Every app is asked the same two questions",
+          "detail": "all of them are already in the template that cdk-nag reads"
+        },
+        {
+          "to": "g_ecr",
+          "edgeId": "e_y1",
+          "label": "It needs an image, so the image lives in ECR",
+          "detail": "a named repo scanned on push lists its findings per repo and tag"
+        },
+        {
+          "to": "e_sym",
+          "label": "One image is still built by CDK during deploy",
+          "detail": "SymmetricDS lands in the bootstrap repo under a content hash, with no name"
+        },
+        {
+          "to": "e_named",
+          "edgeId": "e_optin",
+          "label": "A named repo makes it attributable",
+          "detail": "make symmetric-image-push creates liquorcart/symmetric with scanOnPush=true"
+        },
+        {
+          "to": "g_ecr",
+          "label": "A container finding is fixed by rebuilding the image",
+          "detail": "push the new tag, and ECS rolls the service onto it"
+        },
+        {
+          "to": "d_ec2",
+          "edgeId": "e_q2",
+          "label": "Second question: what does it run on?",
+          "detail": "the three ECS services are placed on EC2 hosts by the capacity provider"
+        },
+        {
+          "to": "g_hosts",
+          "edgeId": "e_y2",
+          "label": "On our own hosts, so every host carries an agent",
+          "detail": "one Rapid7 Insight Agent per host, never per task or as a sidecar"
+        },
+        {
+          "to": "h_r7",
+          "label": "Installed at boot, from user data",
+          "detail": "the image scan covers the container, the agent covers the OS under it"
+        }
+      ]
+    },
+    {
+      "id": "fl_host",
+      "label": "A host boots already monitored",
+      "from": "h_lt",
+      "color": "#ff8a4c",
+      "beatMs": 1200,
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "h_asg",
+          "edgeId": "e_h1",
+          "label": "A new launch template version rolls the group",
+          "detail": "one host at a time, 5 minutes apart, after ECS drains its tasks"
+        },
+        {
+          "to": "h_name",
+          "edgeId": "e_h2",
+          "label": "First thing at boot: a unique hostname",
+          "detail": "liquorcart-<env>-ec2-asg1-<last 8 of the instance id>"
+        },
+        {
+          "to": "h_r7",
+          "edgeId": "e_h3",
+          "label": "Then the agent installs and enrols",
+          "beats": 2,
+          "detail": "token read from Secrets Manager · yum install · configure_agent.sh --token"
+        },
+        {
+          "to": "x_r7",
+          "edgeId": "e_enrol",
+          "label": "The host shows up in Rapid7 by name",
+          "detail": "one asset per host, with attributes LIQUORCART, <ENV>, EC2-ASG1"
+        },
+        {
+          "to": "x_find",
+          "edgeId": "e_find",
+          "label": "And its findings follow",
+          "detail": "for example: Amazon Linux 2 is past end of standard support"
+        }
+      ]
+    },
+    {
+      "id": "fl_patch",
+      "label": "A finding becomes a patch",
+      "from": "x_r7",
+      "color": "#38bdf8",
+      "beatMs": 900,
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "x_find",
+          "edgeId": "e_find",
+          "label": "Rapid7 flags the hosts",
+          "detail": "Amazon Linux 2 passed end of standard support on 2025-06-30"
+        },
+        {
+          "to": "p_host",
+          "edgeId": "e_fix",
+          "label": "Hosts are replaced, never patched in place",
+          "detail": "so the fix is a newer AMI in the launch template"
+        },
+        {
+          "to": "n_cfg",
+          "label": "Which makes the patch a one-line config change",
+          "beats": 2,
+          "detail": "ec2Ami: 'al2023' for that environment, in environments.ts"
+        },
+        {
+          "to": "n_nag",
+          "edgeId": "e_test",
+          "label": "It is tested like any other change",
+          "detail": "make test"
+        },
+        {
+          "to": "n_repo",
+          "edgeId": "e_push",
+          "label": "Merged to main",
+          "detail": ""
+        },
+        {
+          "to": "n_pipe",
+          "edgeId": "e_src",
+          "label": "Picked up by that environment's pipeline",
+          "detail": ""
+        },
+        {
+          "to": "n_gate",
+          "edgeId": "e_gate",
+          "label": "Approved, if it is prod",
+          "detail": ""
+        },
+        {
+          "to": "n_build",
+          "edgeId": "e_bld",
+          "label": "Deployed by CodeBuild",
+          "detail": ""
+        },
+        {
+          "to": "n_deploy",
+          "edgeId": "e_mk",
+          "label": "cdk deploy",
+          "detail": ""
+        },
+        {
+          "to": "c_prog",
+          "edgeId": "e_upd",
+          "label": "CloudFormation sees a new launch template version",
+          "detail": "nothing else in the stack changed, so nothing else is touched"
+        },
+        {
+          "to": "g_env",
+          "edgeId": "e_apply",
+          "label": "The update reaches the environment",
+          "detail": ""
+        },
+        {
+          "to": "h_lt",
+          "label": "The launch template now names the new AMI",
+          "detail": ""
+        },
+        {
+          "to": "h_asg",
+          "edgeId": "e_h1",
+          "label": "ASG1 replaces the hosts one at a time",
+          "beats": 2,
+          "detail": "5 minutes apart, keeping min-1 in service; ECS drains tasks off each one first"
+        },
+        {
+          "to": "h_name",
+          "edgeId": "e_h2",
+          "label": "Each replacement gets its own hostname",
+          "detail": ""
+        },
+        {
+          "to": "h_r7",
+          "edgeId": "e_h3",
+          "label": "And enrols its own agent",
+          "detail": ""
+        },
+        {
+          "to": "x_r7",
+          "edgeId": "e_enrol",
+          "label": "Rapid7 sees patched hosts, and the finding closes",
+          "detail": "the same path a failed patch would roll back along"
+        }
+      ]
+    },
+    {
+      "id": "fl_images",
+      "label": "How a host and a task get their images",
+      "from": "sp_a1",
+      "color": "#818cf8",
+      "beatMs": 1200,
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "sp_a2",
+          "edgeId": "e_sa1",
+          "label": "AWS publishes a patched ECS-optimized AMI",
+          "detail": "and points its public SSM parameter at the new image id"
+        },
+        {
+          "to": "sp_a3",
+          "edgeId": "e_sa2",
+          "label": "Each deploy reads that parameter",
+          "detail": "CloudFormation resolves it into the launch template; a new id is a new version"
+        },
+        {
+          "to": "sp_a4",
+          "edgeId": "e_sa3",
+          "label": "ASG1 launches instances from that AMI",
+          "detail": "a new version rolls the group, one host at a time"
+        },
+        {
+          "to": "sp_a5",
+          "edgeId": "e_sa4",
+          "label": "The host boots and joins the cluster",
+          "detail": "user data sets the hostname, installs Rapid7, mounts FSx; the ECS agent registers"
+        },
+        {
+          "to": "sp_b1",
+          "label": "The container image takes its own road",
+          "beats": 2,
+          "detail": "built on its base image and pushed to ECR, by the app's pipeline or by cdk deploy"
+        },
+        {
+          "to": "sp_b2",
+          "edgeId": "e_sb1",
+          "label": "The task definition names that repo and tag",
+          "detail": "repo:latest for the app images, a content hash for SymmetricDS"
+        },
+        {
+          "to": "sp_b3",
+          "edgeId": "e_sb2",
+          "label": "ECS places the task on a host",
+          "detail": "through the ASG1 capacity provider"
+        },
+        {
+          "to": "sp_b4",
+          "edgeId": "e_sb3",
+          "label": "The agent on that host pulls the image and starts it",
+          "detail": "from ECR, using the task execution role"
+        },
+        {
+          "to": "sp_b5",
+          "edgeId": "e_sb4",
+          "label": "It is used only once it is healthy",
+          "beats": 2,
+          "detail": "the load balancer sends traffic to targets that pass their checks, and to no others"
+        }
+      ]
+    }
+  ]
+}

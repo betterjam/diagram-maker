@@ -1,0 +1,894 @@
+{
+  "title": "How an online order reaches Exatouch",
+  "categories": [
+    {
+      "id": "traffic",
+      "label": "Traffic / Users",
+      "icon": "👥",
+      "color": "#eab308"
+    },
+    {
+      "id": "edge",
+      "label": "Edge / CDN",
+      "icon": "☁️",
+      "color": "#38bdf8"
+    },
+    {
+      "id": "net",
+      "label": "Networking",
+      "icon": "🕸️",
+      "color": "#2dd4bf"
+    },
+    {
+      "id": "compute",
+      "label": "Services",
+      "icon": "⚙️",
+      "color": "#34d399"
+    },
+    {
+      "id": "database",
+      "label": "Database",
+      "icon": "@database",
+      "color": "#fb7185",
+      "shape": "cylinder"
+    },
+    {
+      "id": "storage",
+      "label": "Storage",
+      "icon": "📦",
+      "color": "#f472b6"
+    },
+    {
+      "id": "security",
+      "label": "Security",
+      "icon": "🔒",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "pipeline",
+      "label": "Pipelines",
+      "icon": "🚀",
+      "color": "#c084fc"
+    },
+    {
+      "id": "misc",
+      "label": "Other",
+      "icon": "🧩",
+      "color": "#818cf8"
+    },
+    {
+      "id": "ops",
+      "label": "Ops",
+      "icon": "⏰",
+      "color": "#94a3b8"
+    },
+    {
+      "id": "pos",
+      "label": "Point of sale",
+      "icon": "💳",
+      "color": "#fb923c"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g_central",
+      "label": "Central · AWS",
+      "kind": "container",
+      "categoryId": "edge",
+      "icon": "☁️"
+    },
+    {
+      "id": "g_saga",
+      "label": "Order saga",
+      "kind": "container",
+      "categoryId": "pipeline",
+      "icon": "🧾",
+      "parentId": "g_central"
+    },
+    {
+      "id": "g_store",
+      "label": "Merchant store · on premise",
+      "kind": "container",
+      "categoryId": "pos",
+      "icon": "🏪"
+    },
+    {
+      "id": "g_edge",
+      "label": "Edge API",
+      "kind": "container",
+      "categoryId": "compute",
+      "icon": "⚙️",
+      "parentId": "g_store"
+    },
+    {
+      "id": "g_edgedb",
+      "label": "Edge database · SQLite",
+      "kind": "container",
+      "categoryId": "storage",
+      "icon": "🗃️",
+      "parentId": "g_store"
+    },
+    {
+      "id": "g_xt",
+      "label": "Exatouch",
+      "kind": "container",
+      "categoryId": "pos",
+      "icon": "🖥️",
+      "parentId": "g_store"
+    },
+    {
+      "id": "g_xttdb",
+      "label": "XTTDB · write order, one transaction",
+      "kind": "container",
+      "categoryId": "database",
+      "icon": "🪟",
+      "parentId": "g_xt"
+    },
+    {
+      "id": "g_gaps",
+      "label": "Where this does not add up yet",
+      "kind": "container",
+      "categoryId": "security",
+      "icon": "⚠️"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "pos_page",
+      "label": "Online POS page",
+      "sublabel": "OnlinePosComponent.place()",
+      "categoryId": "pos",
+      "x": 0,
+      "y": 40,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_central",
+      "icon": "🛒",
+      "props": {
+        "posts to": "/v1/sandbox/orders/simulate",
+        "why that one": "the only endpoint that runs the saga, so the only one that reaches an Edge",
+        "sends": "syncToEdge true, isPaid true",
+        "does not": "take a payment — isPaid is asserted by the page"
+      }
+    },
+    {
+      "id": "sandbox",
+      "label": "Order endpoint",
+      "sublabel": "SandboxEndpoints.SimulateOrder",
+      "categoryId": "compute",
+      "x": 0,
+      "y": 120,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_central",
+      "props": {
+        "writes": "OnlineOrder + OnlineOrderLine",
+        "sets": "FulfillmentMode = SyncToEdge",
+        "then": "calls the saga"
+      }
+    },
+    {
+      "id": "c_db",
+      "label": "Central database",
+      "sublabel": "Postgres",
+      "categoryId": "database",
+      "x": -260,
+      "y": 150,
+      "width": 200,
+      "height": 76,
+      "groupId": "g_central"
+    },
+    {
+      "id": "confirm",
+      "label": "Confirm and pay",
+      "sublabel": "OnlineOrderEndpoints.ConfirmOrder",
+      "categoryId": "security",
+      "x": -260,
+      "y": 40,
+      "width": 210,
+      "height": 46,
+      "groupId": "g_central",
+      "icon": "💳",
+      "props": {
+        "takes": "PaymentIntentId, PaymentMethod, tip",
+        "sets": "IsPaid, Status = Confirmed",
+        "runs the saga": "no"
+      },
+      "info": "This is where an online order is paid, and it is not on the path below.\nIt leaves a TODO where the sync to the store should be, so an order\nconfirmed here never reaches an Edge."
+    },
+    {
+      "id": "s_validate",
+      "label": "validate_order",
+      "sublabel": "ValidateOrderStep · order 10",
+      "categoryId": "compute",
+      "x": 20,
+      "y": 240,
+      "width": 190,
+      "height": 38,
+      "groupId": "g_saga",
+      "icon": "✓"
+    },
+    {
+      "id": "s_status",
+      "label": "set_initial_status",
+      "sublabel": "SetInitialStatusStep · order 20",
+      "categoryId": "compute",
+      "x": 20,
+      "y": 305,
+      "width": 190,
+      "height": 38,
+      "groupId": "g_saga",
+      "icon": "🏷️"
+    },
+    {
+      "id": "s_notify",
+      "label": "notify_store",
+      "sublabel": "NotifyStoreStep · order 30",
+      "categoryId": "compute",
+      "x": 20,
+      "y": 370,
+      "width": 190,
+      "height": 38,
+      "groupId": "g_saga",
+      "icon": "📣",
+      "props": {
+        "only when": "FulfillmentMode is SyncToEdge",
+        "publishes": "order.created, keyed by order id",
+        "then": "sets SyncedToEdge on the order"
+      }
+    },
+    {
+      "id": "s_hooks",
+      "label": "trigger_webhooks",
+      "sublabel": "TriggerWebhooksStep · order 40",
+      "categoryId": "ops",
+      "x": 20,
+      "y": 435,
+      "width": 190,
+      "height": 38,
+      "groupId": "g_saga",
+      "icon": "📤",
+      "info": "Runs for every order, but never touches Exatouch.\nQueues WebhookDelivery rows for the merchant's own systems."
+    },
+    {
+      "id": "kafka",
+      "label": "Kafka",
+      "sublabel": "topic pos.orders",
+      "categoryId": "pipeline",
+      "x": 340,
+      "y": 250,
+      "width": 210,
+      "height": 50,
+      "groupId": "g_central",
+      "icon": "📣",
+      "props": {
+        "message": "OrderCreatedEvent as bare JSON, no envelope",
+        "carries": "IsPaid, so the Edge knows it is already settled"
+      }
+    },
+    {
+      "id": "consumer",
+      "label": "Kafka consumer",
+      "sublabel": "KafkaOrderConsumer",
+      "categoryId": "compute",
+      "x": 700,
+      "y": 40,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_edge",
+      "props": {
+        "group": "edge-orders-{edgeId}-v1",
+        "drops": "anything whose locationId is not this store"
+      }
+    },
+    {
+      "id": "bus",
+      "label": "Order event bus",
+      "sublabel": "OrderEventBus · in process",
+      "categoryId": "misc",
+      "x": 700,
+      "y": 160,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_edge",
+      "icon": "🔔",
+      "info": "Every subscriber is called in turn and its exceptions are swallowed,\nso one bad listener cannot stop the others.\nNot durable: the queue in the database is what survives a restart.\nOrderPaid here means the cloud took the money, not this store."
+    },
+    {
+      "id": "dispatcher",
+      "label": "Export dispatcher",
+      "sublabel": "XtExportDispatcher",
+      "categoryId": "compute",
+      "x": 700,
+      "y": 280,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_edge",
+      "props": {
+        "listens for": "OrderPaid",
+        "gates on": "XtIntegration.Enabled",
+        "dedupes on": "the order id"
+      }
+    },
+    {
+      "id": "worker",
+      "label": "Export worker",
+      "sublabel": "XtExportWorker",
+      "categoryId": "ops",
+      "x": 700,
+      "y": 400,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_edge",
+      "props": {
+        "polls": "every 5 seconds, 5 jobs at a time",
+        "re-checks": "that the integration is still on"
+      }
+    },
+    {
+      "id": "translator",
+      "label": "Translator",
+      "sublabel": "XtOrderTranslator",
+      "categoryId": "compute",
+      "x": 700,
+      "y": 520,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_edge",
+      "props": {
+        "pure": "no I/O, so it is the part worth testing",
+        "maps": "fulfillment to XT order type, tender to PayType",
+        "note": "TakeOut becomes PickUp for a remotely placed order"
+      }
+    },
+    {
+      "id": "writer",
+      "label": "Writer",
+      "sublabel": "XtOrderWriter",
+      "categoryId": "compute",
+      "x": 700,
+      "y": 640,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_edge",
+      "icon": "✍️",
+      "props": {
+        "one transaction": "per order",
+        "shadow": "rolls back, so a dry run is a real one",
+        "live": "commits"
+      }
+    },
+    {
+      "id": "synced",
+      "label": "SyncedOrder row",
+      "sublabel": "the order, locally",
+      "categoryId": "storage",
+      "x": 1020,
+      "y": 100,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_edgedb",
+      "icon": "🧾",
+      "props": {
+        "IsPaid": "copied straight off the event",
+        "also kept": "SubTotal and TaxTotal, so the XT receipt adds up"
+      }
+    },
+    {
+      "id": "job",
+      "label": "XtExportJob row",
+      "sublabel": "the outbox",
+      "categoryId": "storage",
+      "x": 1020,
+      "y": 180,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_edgedb",
+      "icon": "📥",
+      "props": {
+        "unique on": "EventId, so a replay writes nothing twice",
+        "freezes": "the translated draft and the shadow flag"
+      }
+    },
+    {
+      "id": "receipt",
+      "label": "Customer receipt prints",
+      "sublabel": "PrinterRole.Receipt",
+      "categoryId": "ops",
+      "x": 1020,
+      "y": 340,
+      "width": 230,
+      "height": 46,
+      "groupId": "g_store",
+      "icon": "🖨️",
+      "info": "The receipt printer subscribes to OrderPaid by default, seeded with the\ncustomer receipt template. So a cloud-paid order arriving over Kafka\nprints a paid receipt at the counter, as though the store took the money."
+    },
+    {
+      "id": "xt_app",
+      "label": "Exatouch POS",
+      "sublabel": "the till and the delivery screen",
+      "categoryId": "pos",
+      "x": 1340,
+      "y": 500,
+      "width": 200,
+      "height": 46,
+      "groupId": "g_xt",
+      "icon": "🖥️",
+      "info": "Nothing here is called by the Edge.\nExatouch finds the order because the row is simply there\nthe next time it looks."
+    },
+    {
+      "id": "t_customers",
+      "label": "Customers",
+      "sublabel": "insert if new",
+      "categoryId": "database",
+      "x": 1340,
+      "y": 640,
+      "width": 200,
+      "height": 36,
+      "groupId": "g_xttdb",
+      "shape": "rect"
+    },
+    {
+      "id": "t_orders",
+      "label": "Orders",
+      "sublabel": "the header",
+      "categoryId": "database",
+      "x": 1340,
+      "y": 696,
+      "width": 200,
+      "height": 36,
+      "groupId": "g_xttdb",
+      "shape": "rect"
+    },
+    {
+      "id": "t_log",
+      "label": "OrdersLog",
+      "sublabel": "audit row",
+      "categoryId": "database",
+      "x": 1340,
+      "y": 752,
+      "width": 200,
+      "height": 36,
+      "groupId": "g_xttdb",
+      "shape": "rect"
+    },
+    {
+      "id": "t_details",
+      "label": "OrdersDetails",
+      "sublabel": "lines and modifiers",
+      "categoryId": "database",
+      "x": 1340,
+      "y": 808,
+      "width": 200,
+      "height": 36,
+      "groupId": "g_xttdb",
+      "shape": "rect"
+    },
+    {
+      "id": "t_tax",
+      "label": "OrdersTax",
+      "sublabel": "four buckets",
+      "categoryId": "database",
+      "x": 1340,
+      "y": 864,
+      "width": 200,
+      "height": 36,
+      "groupId": "g_xttdb",
+      "shape": "rect"
+    },
+    {
+      "id": "t_delivery",
+      "label": "OrdersDelivery",
+      "sublabel": "pickup and delivery only",
+      "categoryId": "database",
+      "x": 1340,
+      "y": 920,
+      "width": 200,
+      "height": 36,
+      "groupId": "g_xttdb",
+      "shape": "rect"
+    },
+    {
+      "id": "t_payments",
+      "label": "Payments",
+      "sublabel": "the tender",
+      "categoryId": "database",
+      "x": 1340,
+      "y": 976,
+      "width": 200,
+      "height": 36,
+      "groupId": "g_xttdb",
+      "shape": "rect"
+    },
+    {
+      "id": "t_settle",
+      "label": "Orders, again",
+      "sublabel": "settle the header",
+      "categoryId": "database",
+      "x": 1340,
+      "y": 1032,
+      "width": 200,
+      "height": 36,
+      "groupId": "g_xttdb",
+      "shape": "rect"
+    },
+    {
+      "id": "gap_split",
+      "label": "Paying and delivering are two paths",
+      "sublabel": "and only one of them reaches a store",
+      "categoryId": "security",
+      "icon": "⚠️",
+      "groupId": "g_gaps",
+      "x": -288,
+      "y": 1240,
+      "width": 340,
+      "height": 56,
+      "info": "ConfirmOrder takes the payment and stops at a TODO.\nThe sandbox endpoint runs the saga and takes no payment.\nThe page simply asserts isPaid on the way in."
+    },
+    {
+      "id": "gap_flag",
+      "label": "The event carries a flag, not a tender",
+      "sublabel": "order.created has IsPaid and nothing else",
+      "categoryId": "security",
+      "icon": "⚠️",
+      "groupId": "g_gaps",
+      "x": 92,
+      "y": 1240,
+      "width": 340,
+      "height": 56,
+      "info": "No method, no amount tendered, no last four, no processor reference.\nCentral knows all of it: PaymentIntentId and PaymentMethod sit on the order.\nNone of it is put on the wire."
+    },
+    {
+      "id": "gap_name",
+      "label": "The Edge re-announces it as its own",
+      "sublabel": "same event as a real payment at the till",
+      "categoryId": "security",
+      "icon": "⚠️",
+      "groupId": "g_gaps",
+      "x": 472,
+      "y": 1240,
+      "width": 340,
+      "height": 56,
+      "info": "The local path fires OrderPaid when a tender covers the order.\nThe Kafka path fires the same event for money taken in the cloud.\nNothing downstream can tell them apart, and the receipt printer already cares."
+    },
+    {
+      "id": "gap_tender",
+      "label": "A card tender with nothing behind it",
+      "sublabel": "the Exatouch batch cannot reconcile",
+      "categoryId": "security",
+      "icon": "⚠️",
+      "groupId": "g_gaps",
+      "x": 852,
+      "y": 1240,
+      "width": 340,
+      "height": 56,
+      "info": "The snapshot invents one Card payment for the grand total.\nThat becomes a real Payments row, with no CCTxs row behind it,\nso the store's card total includes money its terminal never ran."
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_place",
+      "from": "pos_page",
+      "to": "sandbox",
+      "kind": "solid",
+      "label": "POST the cart"
+    },
+    {
+      "id": "e_saga",
+      "from": "sandbox",
+      "to": "s_validate",
+      "kind": "solid"
+    },
+    {
+      "id": "e_s1",
+      "from": "s_validate",
+      "to": "s_status",
+      "kind": "solid"
+    },
+    {
+      "id": "e_s2",
+      "from": "s_status",
+      "to": "s_notify",
+      "kind": "solid"
+    },
+    {
+      "id": "e_s3",
+      "from": "s_notify",
+      "to": "s_hooks",
+      "kind": "solid"
+    },
+    {
+      "id": "e_persist",
+      "from": "sandbox",
+      "to": "c_db",
+      "kind": "dashed",
+      "label": "the order, stored"
+    },
+    {
+      "id": "e_confirm",
+      "from": "confirm",
+      "to": "c_db",
+      "kind": "dotted",
+      "label": "payment intent + method"
+    },
+    {
+      "id": "e_receipt",
+      "from": "bus",
+      "to": "receipt",
+      "kind": "dotted",
+      "label": "customer receipt"
+    },
+    {
+      "id": "e_produce",
+      "from": "s_notify",
+      "to": "kafka",
+      "kind": "dashed",
+      "speed": "fast",
+      "label": "order.created"
+    },
+    {
+      "id": "e_consume",
+      "from": "kafka",
+      "to": "consumer",
+      "kind": "dashed",
+      "speed": "fast",
+      "label": "TCP 9094"
+    },
+    {
+      "id": "e_row",
+      "from": "consumer",
+      "to": "synced",
+      "kind": "solid",
+      "label": "write it down"
+    },
+    {
+      "id": "e_bus",
+      "from": "synced",
+      "to": "bus",
+      "kind": "solid",
+      "label": "if paid"
+    },
+    {
+      "id": "e_disp",
+      "from": "bus",
+      "to": "dispatcher",
+      "kind": "solid",
+      "label": "OrderPaid"
+    },
+    {
+      "id": "e_job",
+      "from": "dispatcher",
+      "to": "job",
+      "kind": "solid",
+      "label": "queue it"
+    },
+    {
+      "id": "e_pick",
+      "from": "job",
+      "to": "worker",
+      "kind": "dashed",
+      "label": "poll"
+    },
+    {
+      "id": "e_trans",
+      "from": "worker",
+      "to": "translator",
+      "kind": "solid"
+    },
+    {
+      "id": "e_draft",
+      "from": "translator",
+      "to": "writer",
+      "kind": "solid",
+      "label": "XtOrderDraft"
+    },
+    {
+      "id": "e_open",
+      "from": "writer",
+      "to": "t_customers",
+      "kind": "solid",
+      "label": "one transaction"
+    },
+    {
+      "id": "e_c1",
+      "from": "t_customers",
+      "to": "t_orders",
+      "kind": "dotted"
+    },
+    {
+      "id": "e_c2",
+      "from": "t_orders",
+      "to": "t_log",
+      "kind": "dotted"
+    },
+    {
+      "id": "e_c3",
+      "from": "t_log",
+      "to": "t_details",
+      "kind": "dotted"
+    },
+    {
+      "id": "e_c4",
+      "from": "t_details",
+      "to": "t_tax",
+      "kind": "dotted"
+    },
+    {
+      "id": "e_c5",
+      "from": "t_tax",
+      "to": "t_delivery",
+      "kind": "dotted"
+    },
+    {
+      "id": "e_c6",
+      "from": "t_delivery",
+      "to": "t_payments",
+      "kind": "dotted"
+    },
+    {
+      "id": "e_c7",
+      "from": "t_payments",
+      "to": "t_settle",
+      "kind": "dotted"
+    },
+    {
+      "id": "e_read",
+      "from": "xt_app",
+      "to": "g_xttdb",
+      "kind": "dotted",
+      "label": "reads it back"
+    }
+  ],
+  "flows": [
+    {
+      "id": "fl_journey",
+      "label": "An online order reaches Exatouch",
+      "from": "pos_page",
+      "color": "#38bdf8",
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "sandbox",
+          "edgeId": "e_place",
+          "label": "The customer submits the cart",
+          "detail": "POST /v1/sandbox/orders/simulate · isPaid is asserted here, not charged"
+        },
+        {
+          "to": "s_validate",
+          "edgeId": "e_saga",
+          "label": "The saga picks the order up",
+          "detail": "OrderSagaOrchestrator runs its steps in order"
+        },
+        {
+          "to": "s_status",
+          "edgeId": "e_s1",
+          "label": "It gets its opening status",
+          "detail": "SetInitialStatusStep · Received, plus a history row"
+        },
+        {
+          "to": "s_notify",
+          "edgeId": "e_s2",
+          "label": "Only now is the store told",
+          "detail": "NotifyStoreStep runs only when FulfillmentMode is SyncToEdge"
+        },
+        {
+          "to": "kafka",
+          "edgeId": "e_produce",
+          "label": "order.created goes on the wire",
+          "detail": "topic pos.orders, keyed by order id, IsPaid carried on the event"
+        },
+        {
+          "to": "consumer",
+          "edgeId": "e_consume",
+          "label": "The store's Edge is already subscribed",
+          "detail": "KafkaOrderConsumer · group edge-orders-{edgeId}-v1"
+        },
+        {
+          "to": "synced",
+          "edgeId": "e_row",
+          "label": "The store keeps its own copy",
+          "detail": "SyncedOrder · IsPaid, SubTotal and TaxTotal come off the event"
+        },
+        {
+          "to": "bus",
+          "edgeId": "e_bus",
+          "label": "The store is told it was already paid",
+          "detail": "not a payment: the snapshot invents a card tender, the event carries only a flag"
+        },
+        {
+          "to": "dispatcher",
+          "edgeId": "e_disp",
+          "label": "The export subscriber wakes",
+          "detail": "XtExportDispatcher · OrderPaid is the only event it listens for"
+        },
+        {
+          "to": "job",
+          "edgeId": "e_job",
+          "label": "The write is queued, not done",
+          "detail": "XtExportJob · unique on EventId, so a replay costs nothing"
+        },
+        {
+          "to": "worker",
+          "edgeId": "e_pick",
+          "label": "A worker takes the job",
+          "detail": "XtExportWorker · every 5 seconds, five at a time"
+        },
+        {
+          "to": "translator",
+          "edgeId": "e_trans",
+          "label": "Turn it into Exatouch's shape",
+          "detail": "XtOrderTranslator · pure, no database anywhere near it"
+        },
+        {
+          "to": "writer",
+          "edgeId": "e_draft",
+          "label": "Hand the draft to the writer",
+          "detail": "XtOrderWriter.WriteAsync"
+        },
+        {
+          "to": "t_customers",
+          "edgeId": "e_open",
+          "label": "Open one transaction on XTTDB",
+          "detail": "shadow mode rolls it back, live mode commits"
+        }
+      ]
+    },
+    {
+      "id": "fl_write",
+      "label": "What the writer puts in XTTDB",
+      "from": "writer",
+      "color": "#f472b6",
+      "restBeats": 3,
+      "steps": [
+        {
+          "to": "t_customers",
+          "edgeId": "e_open",
+          "label": "Customers",
+          "detail": "inserted only when name and phone match nothing already there"
+        },
+        {
+          "to": "t_orders",
+          "edgeId": "e_c1",
+          "label": "Orders",
+          "detail": "the header · OUTPUT INSERTED hands back the OrderID everything else needs"
+        },
+        {
+          "to": "t_log",
+          "edgeId": "e_c2",
+          "label": "OrdersLog",
+          "detail": "one audit row against that OrderID"
+        },
+        {
+          "to": "t_details",
+          "edgeId": "e_c3",
+          "label": "OrdersDetails",
+          "detail": "one row per line, plus a comment row per modifier"
+        },
+        {
+          "to": "t_tax",
+          "edgeId": "e_c4",
+          "label": "OrdersTax",
+          "detail": "four buckets, filled or written as zero"
+        },
+        {
+          "to": "t_delivery",
+          "edgeId": "e_c5",
+          "label": "OrdersDelivery",
+          "detail": "pickup, delivery and shipping only — a dine-in order gets none"
+        },
+        {
+          "to": "t_payments",
+          "edgeId": "e_c6",
+          "label": "Payments",
+          "detail": "one tender · no CCTxs row, the synthesised card carries no last four"
+        },
+        {
+          "to": "t_settle",
+          "edgeId": "e_c7",
+          "label": "Orders, again",
+          "detail": "Paid, Status, CloseDate, BatchID · and no OrdersTips: the tip is zero"
+        }
+      ]
+    }
+  ]
+}
